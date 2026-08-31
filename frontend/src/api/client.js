@@ -1,19 +1,25 @@
+import { ref } from 'vue'
+
 const BASE_URL = '/api/v1'
 const TOKEN_KEY = 'furdentity.token'
 const REFRESH_KEY = 'furdentity.refreshToken'
 
+const authenticated = ref(Boolean(localStorage.getItem(TOKEN_KEY)))
+
 export function isAuthenticated() {
-  return Boolean(localStorage.getItem(TOKEN_KEY))
+  return authenticated.value
 }
 
 export function storeTokens({ token, refreshToken }) {
   localStorage.setItem(TOKEN_KEY, token)
   if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken)
+  authenticated.value = true
 }
 
 export function clearTokens() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_KEY)
+  authenticated.value = false
 }
 
 async function request(path, { method = 'GET', body, auth = false, _retried = false } = {}) {
@@ -65,8 +71,14 @@ async function tryRefresh() {
 export const api = {
   ping: () => request('/public/ping'),
   publicProfiles: () => request('/public/profiles'),
-  login: (email, password) =>
-    request('/auth/login', { method: 'POST', body: { email, password } }),
+  requestLoginLink: (email, title, handle) =>
+    request('/auth/request-link', { method: 'POST', body: { email, title, handle } }),
+  confirmLogin: (sid, code) => request('/auth/confirm', { method: 'POST', body: { sid, code } }),
   me: () => request('/internal/me', { auth: true }),
+  updateMe: (data) => request('/internal/me', { method: 'PATCH', body: data, auth: true }),
   internalProfiles: () => request('/internal/profiles', { auth: true }),
+  sessions: () => request('/internal/sessions', { auth: true }),
+  revokeSession: (id) => request(`/internal/sessions/${id}`, { method: 'DELETE', auth: true }),
+  logoutAllSessions: () =>
+    request('/internal/sessions/logout-all', { method: 'POST', auth: true }),
 }

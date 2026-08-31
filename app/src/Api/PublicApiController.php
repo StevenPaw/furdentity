@@ -3,7 +3,7 @@
 namespace App\Api;
 
 use Override;
-use App\Model\Profile;
+use App\Model\User;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
 use SilverStripe\Core\Environment;
@@ -68,8 +68,8 @@ class PublicApiController extends ApiController
     {
         $data = [];
 
-        foreach (Profile::get()->filter('IsPublic', true) as $profile) {
-            $data[] = $profile->toApiData();
+        foreach (User::get() as $user) {
+            $data[] = $user->toApiData();
         }
 
         return $this->jsonResponse(['data' => $data]);

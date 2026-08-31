@@ -12,7 +12,8 @@
         "silverstripe/admin": "^3.2",
         "silverstripe/asset-admin": "^3.2",
         "stevenpaw/silverstripe-cms-backend-theme": "^1.1",
-        "firebase/php-jwt": "^7.1"
+        "firebase/php-jwt": "^7.1",
+        "silverstripe/login-forms": "^6.2"
     },
     "require-dev": {
         "wernerkrauss/silverstripe-rector": "^1",

@@ -3,6 +3,7 @@ Name: furdentity-routes
 After:
   - '#rootroutes'
   - '#coreroutes'
+  - '#adminroutes'
 ---
 SilverStripe\Control\Director:
   rules:

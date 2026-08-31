@@ -7,3 +7,6 @@ App\Api\Support\JwtService:
   # Lifetime of a refresh token in seconds (14 days)
   refresh_token_ttl: 1209600
   issuer: 'furdentity'
+App\Api\AuthController:
+  # How long an emailed login link stays valid, in seconds (15 minutes)
+  login_code_ttl: 900

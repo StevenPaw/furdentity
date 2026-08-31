@@ -4,33 +4,49 @@ namespace App\Api;
 
 use Override;
 use App\Api\Support\JwtService;
-use App\Model\Profile;
+use App\Model\User;
+use App\Model\UserSession;
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Security\Member;
-use SilverStripe\Security\Security;
 use Throwable;
 
 /**
  * Internal API that feeds the own Vue frontend. Every request must carry a
- * valid access token: "Authorization: Bearer <jwt>". Obtain one from
- * POST /api/v1/auth/login.
+ * valid access token: "Authorization: Bearer <jwt>". Obtain one from the
+ * passwordless login flow (POST /api/v1/auth/request-link + /confirm).
  *
- *   GET /api/v1/internal/me
- *   GET /api/v1/internal/profiles
+ * Authenticates against {@see User} (the app's own user model), never
+ * against SilverStripe Member/Security – those are reserved for CMS admins.
+ *
+ *   GET    /api/v1/internal/me
+ *   PATCH  /api/v1/internal/me    { "title"?: "...", "bio"?: "..." } – Handle
+ *                                 is deliberately not editable here; once set
+ *                                 at registration only a CMS admin can change it.
+ *   GET    /api/v1/internal/profiles
+ *   GET    /api/v1/internal/sessions
+ *   DELETE /api/v1/internal/sessions/$ID
+ *   POST   /api/v1/internal/sessions/logout-all
  */
 class InternalApiController extends ApiController
 {
     private static array $url_handlers = [
-        'me' => 'currentMember',
+        'me' => 'currentUser',
         'profiles' => 'profiles',
+        'sessions/logout-all' => 'logoutAllSessions',
+        'sessions/$ID!' => 'revokeSession',
+        'sessions' => 'sessions',
     ];
 
     private static array $allowed_actions = [
-        'currentMember',
+        'currentUser',
         'profiles',
+        'sessions',
+        'revokeSession',
+        'logoutAllSessions',
     ];
 
-    private ?Member $authenticatedMember = null;
+    private ?User $authenticatedUser = null;
+
+    private ?UserSession $currentSession = null;
 
     #[Override]
     protected function init(): void
@@ -49,36 +65,118 @@ class InternalApiController extends ApiController
             $this->error('Invalid or expired token', 401);
         }
 
-        $member = Member::get()->byID((int) $payload->sub);
+        $session = UserSession::get()->byID((int) $payload->sid);
 
-        if (!$member instanceof Member) {
+        if (!$session instanceof UserSession || !$session->Confirmed || $session->RevokedAt) {
             $this->error('Invalid or expired token', 401);
         }
 
-        $this->authenticatedMember = $member;
-        Security::setCurrentUser($member);
+        $user = $session->User();
+
+        if (!$user->exists()) {
+            $this->error('Invalid or expired token', 401);
+        }
+
+        $this->authenticatedUser = $user;
+        $this->currentSession = $session;
     }
 
-    public function currentMember(): HTTPResponse
+    public function currentUser(): HTTPResponse
     {
-        $member = $this->authenticatedMember;
+        if ($this->getRequest()->httpMethod() === 'PATCH') {
+            return $this->updateCurrentUser();
+        }
 
-        return $this->jsonResponse([
-            'id' => (int) $member->ID,
-            'email' => (string) $member->Email,
-            'firstName' => (string) $member->FirstName,
-            'surname' => (string) $member->Surname,
-        ]);
+        return $this->jsonResponse($this->authenticatedUser->toOwnApiData());
+    }
+
+    /**
+     * Deliberately only accepts title/bio – Handle is permanent once set at
+     * registration and from then on only editable by a CMS admin.
+     */
+    private function updateCurrentUser(): HTTPResponse
+    {
+        $body = $this->jsonBody();
+        $user = $this->authenticatedUser;
+
+        if (array_key_exists('title', $body)) {
+            $title = trim((string) $body['title']);
+
+            if ($title === '') {
+                $this->error('title cannot be empty', 422);
+            }
+
+            $user->Title = $title;
+        }
+
+        if (array_key_exists('bio', $body)) {
+            $user->Bio = (string) $body['bio'];
+        }
+
+        $user->write();
+
+        return $this->jsonResponse($user->toOwnApiData());
     }
 
     public function profiles(): HTTPResponse
     {
         $data = [];
 
-        foreach (Profile::get() as $profile) {
-            $data[] = $profile->toApiData();
+        foreach (User::get() as $user) {
+            $data[] = $user->toApiData();
         }
 
         return $this->jsonResponse(['data' => $data]);
+    }
+
+    public function sessions(): HTTPResponse
+    {
+        $data = [];
+
+        foreach ($this->authenticatedUser->Sessions()->filter(['Confirmed' => true, 'RevokedAt' => null]) as $session) {
+            $data[] = [
+                'id' => (int) $session->ID,
+                'userAgent' => (string) $session->UserAgent,
+                'ipAddress' => (string) $session->IPAddress,
+                'createdAt' => (string) $session->Created,
+                'lastUsedAt' => (string) $session->LastUsedAt,
+                'current' => (int) $session->ID === (int) $this->currentSession->ID,
+            ];
+        }
+
+        return $this->jsonResponse(['data' => $data]);
+    }
+
+    public function revokeSession(): HTTPResponse
+    {
+        if (!$this->getRequest()->isDELETE()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $id = (int) $this->getRequest()->param('ID');
+        $session = $this->authenticatedUser->Sessions()->byID($id);
+
+        if (!$session instanceof UserSession) {
+            $this->error('Session not found', 404);
+        }
+
+        $session->RevokedAt = date('Y-m-d H:i:s');
+        $session->write();
+
+        return $this->jsonResponse(['revoked' => true]);
+    }
+
+    public function logoutAllSessions(): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        foreach ($this->authenticatedUser->Sessions()->filter('RevokedAt', null) as $session) {
+            $session->RevokedAt = date('Y-m-d H:i:s');
+            $session->write();
+        }
+
+        return $this->jsonResponse(['revoked' => true]);
     }
 }

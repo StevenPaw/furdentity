@@ -1,0 +1,18 @@
+de:
+  App\Model\User:
+    SINGULARNAME: Benutzer
+    PLURALNAME: Benutzer
+    db_Email: E-Mail
+    db_Title: Titel
+    db_Handle: Kennung
+    db_Bio: Biografie
+    SummaryEmail: E-Mail
+    SummaryTitle: Name
+    SummaryHandle: Kennung
+  App\Admin\UserAdmin:
+    MENUTITLE: Benutzer
+  App\Api\AuthController:
+    EMAIL_SUBJECT: 'Dein Furdentity-Login-Link'
+    EMAIL_INTRO: 'Klicke auf den folgenden Link, um dich anzumelden:'
+    EMAIL_CTA: 'Bei Furdentity anmelden'
+    EMAIL_EXPIRY: 'Dieser Link ist 15 Minuten gültig und kann nur einmal verwendet werden.'

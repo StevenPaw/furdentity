@@ -1,0 +1,89 @@
+{
+  "app": {
+    "title": "Furdentity"
+  },
+  "nav": {
+    "myProfiles": "My profiles",
+    "sessions": "Sessions",
+    "register": "Create profile",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "footer": {
+    "legal": "Legal",
+    "impressum": "Legal notice",
+    "privacy": "Privacy policy",
+    "about": "About us"
+  },
+  "landing": {
+    "heroTitle": "One identity for every furry corner of the internet",
+    "heroSubtitle": "Furdentity links your fursona's pages, socials and communities into a single, shareable profile.",
+    "cta": "Create your profile",
+    "ctaBandTitle": "Ready to bring your identity together?",
+    "features": [
+      {
+        "title": "Present your Fursona",
+        "text": "One simple link to show everyone your fursona."
+      },
+      {
+        "title": "One profile, every link",
+        "text": "Bundle all the places your fursona lives online in a single, tidy profile."
+      },
+      {
+        "title": "Built for the fandom",
+        "text": "Made by and for the furry community, with the fandom's needs in mind."
+      }
+    ]
+  },
+  "home": {
+    "myProfileHeading": "My profile",
+    "handleFixed": "Your handle is permanent and can only be changed by an admin.",
+    "bio": "Bio",
+    "save": "Save",
+    "saved": "Saved.",
+    "profilesHeading": "All profiles",
+    "noProfiles": "No profiles yet."
+  },
+  "login": {
+    "heading": "Login",
+    "intro": "No password needed – we'll email you a login link.",
+    "email": "Email",
+    "submit": "Send login link",
+    "submitting": "…",
+    "linkSent": "Check {email} for a login link. It expires in 15 minutes.",
+    "noAccount": "Don't have an account yet?"
+  },
+  "register": {
+    "heading": "Create your profile",
+    "intro": "Enter your email and we'll send you a link to create your account – no password needed.",
+    "username": "Username",
+    "usernameHint": "Shown as your display name. You can change this anytime later.",
+    "handle": "Handle",
+    "handleHint": "3-32 characters, lowercase letters/numbers/-/_ only. This is permanent and can only be changed by an admin afterwards.",
+    "submit": "Send login link",
+    "haveAccount": "Already have an account?"
+  },
+  "loginConfirm": {
+    "heading": "Logging you in",
+    "pending": "Confirming your login link…",
+    "invalid": "This login link is missing its confirmation code.",
+    "backToLogin": "Back to login"
+  },
+  "sessions": {
+    "heading": "Sessions",
+    "unknownDevice": "Unknown device",
+    "thisDevice": "This device",
+    "lastActive": "last active",
+    "revoke": "Log out",
+    "logoutAll": "Log out everywhere",
+    "none": "No active sessions."
+  },
+  "about": {
+    "heading": "About us",
+    "text": "Furdentity is being built by Steffen Kahl, a developer connecting the many corners of the furry fandom into one identity. [Placeholder text – to be replaced with a real bio.]"
+  },
+  "notFound": {
+    "heading": "Page not found",
+    "backHome": "Back to the start page"
+  }
+}

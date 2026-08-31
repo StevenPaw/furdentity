@@ -2,6 +2,8 @@
 
 namespace App\Api\Support;
 
+use App\Model\User;
+use App\Model\UserSession;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -9,7 +11,6 @@ use RuntimeException;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\Security\Member;
 use stdClass;
 use UnexpectedValueException;
 
@@ -33,15 +34,25 @@ class JwtService
     private static string $issuer = 'furdentity';
 
     /**
+     * $refreshJti is the plaintext refresh-token identifier the caller has
+     * already stored (hashed) on $session, so the refresh token issued here
+     * matches what /auth/refresh will look up.
+     *
      * @return array{token: string, refreshToken: string, expiresIn: int, tokenType: string}
      */
-    public function issueTokenPair(Member $member): array
+    public function issueTokenPair(User $user, UserSession $session, string $refreshJti): array
     {
         $accessTtl = (int) $this->config()->get('access_token_ttl');
 
         return [
-            'token' => $this->issue($member, 'access', $accessTtl),
-            'refreshToken' => $this->issue($member, 'refresh', (int) $this->config()->get('refresh_token_ttl')),
+            'token' => $this->issue($user, $session, 'access', $accessTtl),
+            'refreshToken' => $this->issue(
+                $user,
+                $session,
+                'refresh',
+                (int) $this->config()->get('refresh_token_ttl'),
+                $refreshJti
+            ),
             'expiresIn' => $accessTtl,
             'tokenType' => 'Bearer',
         ];
@@ -66,18 +77,25 @@ class JwtService
         return $payload;
     }
 
-    private function issue(Member $member, string $type, int $ttl): string
+    private function issue(User $user, UserSession $session, string $type, int $ttl, ?string $jti = null): string
     {
         $now = time();
 
-        return JWT::encode([
+        $payload = [
             'iss' => (string) $this->config()->get('issuer'),
-            'sub' => (string) $member->ID,
+            'sub' => (string) $user->ID,
+            'sid' => (int) $session->ID,
             'type' => $type,
             'iat' => $now,
             'exp' => $now + $ttl,
-            'email' => $type === 'access' ? $member->Email : null,
-        ], $this->signingKey(), self::ALGORITHM);
+            'email' => $type === 'access' ? $user->Email : null,
+        ];
+
+        if ($jti !== null) {
+            $payload['jti'] = $jti;
+        }
+
+        return JWT::encode($payload, $this->signingKey(), self::ALGORITHM);
     }
 
     private function signingKey(): string

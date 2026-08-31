@@ -1,0 +1,89 @@
+{
+  "app": {
+    "title": "Furdentity"
+  },
+  "nav": {
+    "myProfiles": "Meine Profile",
+    "sessions": "Sitzungen",
+    "register": "Profil erstellen",
+    "login": "Anmelden",
+    "logout": "Abmelden"
+  },
+  "footer": {
+    "legal": "Legal",
+    "impressum": "Impressum",
+    "privacy": "Datenschutzerklärung",
+    "about": "About us"
+  },
+  "landing": {
+    "heroTitle": "Eine Identität für jede furry Ecke des Internets",
+    "heroSubtitle": "Furdentity verbindet die Seiten, Social-Media-Profile und Communities deiner Fursona zu einem einzigen, teilbaren Profil.",
+    "cta": "Profil erstellen",
+    "ctaBandTitle": "Bereit, deine Identität zu bündeln?",
+    "features": [
+      {
+        "title": "Präsentiere deine Fursona",
+        "text": "Ein simpler Link um jeden deine Fursona zeigen zu können."
+      },
+      {
+        "title": "Ein Profil, alle Links",
+        "text": "Bündle alle Orte, an denen deine Fursona online vertreten ist, in einem übersichtlichen Profil."
+      },
+      {
+        "title": "Für das Fandom gemacht",
+        "text": "Von und für die Furry-Community entwickelt, mit den Bedürfnissen des Fandoms im Blick."
+      }
+    ]
+  },
+  "home": {
+    "myProfileHeading": "Mein Profil",
+    "handleFixed": "Deine Kennung ist dauerhaft festgelegt und kann nur von einem Admin geändert werden.",
+    "bio": "Biografie",
+    "save": "Speichern",
+    "saved": "Gespeichert.",
+    "profilesHeading": "Alle Profile",
+    "noProfiles": "Noch keine Profile."
+  },
+  "login": {
+    "heading": "Anmelden",
+    "intro": "Kein Passwort nötig – wir schicken dir einen Login-Link per E-Mail.",
+    "email": "E-Mail",
+    "submit": "Login-Link senden",
+    "submitting": "…",
+    "linkSent": "Schau in dein Postfach ({email}) für den Login-Link. Er ist 15 Minuten gültig.",
+    "noAccount": "Noch kein Konto?"
+  },
+  "register": {
+    "heading": "Profil erstellen",
+    "intro": "Gib deine E-Mail-Adresse ein, wir schicken dir einen Link zum Anlegen deines Kontos – ganz ohne Passwort.",
+    "username": "Benutzername",
+    "usernameHint": "Wird als dein Anzeigename verwendet. Kannst du später jederzeit ändern.",
+    "handle": "Kennung",
+    "handleHint": "3-32 Zeichen, nur Kleinbuchstaben/Zahlen/-/_. Diese ist dauerhaft und kann danach nur von einem Admin geändert werden.",
+    "submit": "Login-Link senden",
+    "haveAccount": "Schon ein Konto?"
+  },
+  "loginConfirm": {
+    "heading": "Anmeldung läuft",
+    "pending": "Login-Link wird bestätigt…",
+    "invalid": "Diesem Login-Link fehlt der Bestätigungscode.",
+    "backToLogin": "Zurück zur Anmeldung"
+  },
+  "sessions": {
+    "heading": "Sitzungen",
+    "unknownDevice": "Unbekanntes Gerät",
+    "thisDevice": "Dieses Gerät",
+    "lastActive": "zuletzt aktiv",
+    "revoke": "Abmelden",
+    "logoutAll": "Überall abmelden",
+    "none": "Keine aktiven Sitzungen."
+  },
+  "about": {
+    "heading": "About us",
+    "text": "Furdentity wird von Steffen Kahl entwickelt, einem Entwickler, der die vielen Ecken des Furry-Fandoms zu einer Identität verbindet. [Platzhaltertext – durch eine echte Kurzbiografie ersetzen.]"
+  },
+  "notFound": {
+    "heading": "Seite nicht gefunden",
+    "backHome": "Zurück zur Startseite"
+  }
+}
