@@ -1,9 +1,18 @@
 ---
-Name: approutes
+Name: furdentity-routes
 After:
-  - "#rootroutes"
-  - "#coreroutes"
+  - '#rootroutes'
+  - '#coreroutes'
 ---
 SilverStripe\Control\Director:
   rules:
-    "typographyexample//$Action/$ID/$Name": 'App\Pages\TypographyExampleController'
+    # Public API – later gated by an API key (X-Api-Key header)
+    'api/v1/public//$Action/$ID/$OtherID': 'App\Api\PublicApiController'
+    # Internal API – feeds the own Vue frontend, JWT bearer auth
+    'api/v1/internal//$Action/$ID/$OtherID': 'App\Api\InternalApiController'
+    # Auth endpoints for the internal API (login / refresh)
+    'api/v1/auth//$Action': 'App\Api\AuthController'
+    # Everything else is the Vue 3 SPA shell (overrides the framework default
+    # '' => SilverStripe\Control\Controller welcome route)
+    '': 'App\Control\FrontendController'
+    '$@': 'App\Control\FrontendController'

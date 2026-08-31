@@ -1,0 +1,9 @@
+---
+Name: furdentity-api
+---
+App\Api\Support\JwtService:
+  # Lifetime of an access token in seconds (15 minutes)
+  access_token_ttl: 900
+  # Lifetime of a refresh token in seconds (14 days)
+  refresh_token_ttl: 1209600
+  issuer: 'furdentity'

@@ -1,44 +1,45 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig(({ command }) => {
-    const primary_url = process.env.DDEV_PRIMARY_URL || 'http://localhost';
-    const origin = primary_url.replace(/:\d+$/, "") + `:5173`;
-    return {
-        server: {
-            host: "0.0.0.0",
-            port: 5173,
-            strictPort: true,
-            origin: origin,
-            cors: {
-                origin: /https?:\/\/([A-Za-z0-9\-\.]+)?(\.ddev\.site)(?::\d+)?$/,
-            },
-            watch: {
-                usePolling: true, // Enable polling for file changes
-            }
+  const ddevUrl = process.env.DDEV_PRIMARY_URL || 'https://furdentity.ddev.site'
+
+  return {
+    root: 'frontend',
+    // Served from the domain root by the Vite dev server, but from
+    // /frontend/ in production (see public/frontend/ + FrontendController).
+    base: command === 'build' ? '/frontend/' : '/',
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        '@': new URL('./frontend/src', import.meta.url).pathname,
+      },
+    },
+    server: {
+      host: '0.0.0.0',
+      port: 5173,
+      strictPort: true,
+      origin: ddevUrl.replace(/:\d+$/, '') + ':5173',
+      cors: {
+        origin: /https?:\/\/([A-Za-z0-9\-.]+)?(\.ddev\.site)(?::\d+)?$/,
+      },
+      watch: {
+        usePolling: true,
+      },
+      proxy: {
+        '/api': {
+          target: ddevUrl,
+          changeOrigin: true,
+          secure: false,
         },
-        alias: {
-            alias: [{find: '@', replacement: './app/client/src'}],
-        },
-        // base: (command === 'build') ? '/_resources/app/client/dist/' : '/', // TODO: .env variable, only on build
-        base: './',
-        publicDir: 'app/client/public',
-        build: {
-        // cssCodeSplit: false,
-        outDir: './app/client/dist',
-        manifest: true,
-        sourcemap: true,
-        rollupOptions: {
-            input: {
-            'main.js': './app/client/src/js/main.js',
-            'main.scss': './app/client/src/scss/main.scss',
-            'editor.scss': './app/client/src/scss/editor.scss',
-            },
-        },
-        },
-        css: {
-            devSourcemap: true,
-        },
-        plugins: []
-    }
+      },
+    },
+    build: {
+      outDir: '../public/frontend',
+      emptyOutDir: true,
+      manifest: false,
+      sourcemap: true,
+    },
+  }
 })

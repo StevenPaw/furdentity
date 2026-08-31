@@ -2,14 +2,13 @@
 /vendor/
 /_resources/
 /public/_resources/
-/.idea
-/app/client/dist
+/public/frontend/
 /node_modules
+/.idea
+.vscode/
+.DS_Store
 
 public/_graphql/
-
 .graphql-generated/
-
 public/assets/
-
-.vscode/
+silverstripe-cache/

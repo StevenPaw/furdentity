@@ -1,7 +1,7 @@
-name: silverstripe-template
+name: furdentity
 type: silverstripe
 docroot: public
-php_version: "8.4"
+php_version: "8.5"
 webserver_type: apache-fpm
 xdebug_enabled: false
 additional_hostnames: []
@@ -11,6 +11,7 @@ database:
     version: "10.11"
 use_dns_when_possible: true
 composer_version: "2"
+nodejs_version: "22"
 web_environment: []
 web_extra_exposed_ports:
     - name: vite
@@ -19,10 +20,10 @@ web_extra_exposed_ports:
       https_port: 5173
 hooks:
     post-start:
-        - exec: bash -c 'yarn'
+        - composer: install
+        - exec: bash -c 'yarn install'
         - exec: bash -c 'yarn build'
-        - exec: bash -c 'composer install'
-        - exec: bash -c 'sake dev/build'
+        - exec: bash -c 'vendor/bin/sake dev/build'
 corepack_enable: false
 # Key features of DDEV's config.yaml:
 

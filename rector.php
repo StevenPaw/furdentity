@@ -18,12 +18,12 @@ return RectorConfig::configure()
     //    ->withPreparedSets(deadCode: true)
     ->withSets([
         //rector lists
-        LevelSetList::UP_TO_PHP_83,
+        LevelSetList::UP_TO_PHP_85,
         // SetList::CODE_QUALITY,
         // SetList::CODING_STYLE,
         // silverstripe rector
         // SilverstripeSetList::CODE_STYLE,
-        SilverstripeLevelSetList::UP_TO_SS_6_0
+        SilverstripeLevelSetList::UP_TO_SS_6_2
     ])
     ->withRules([
         // EnsureTableNameIsSetRector::class,
