@@ -26,9 +26,12 @@ use Throwable;
  * against SilverStripe Member/Security – those are reserved for CMS admins.
  *
  *   GET    /api/v1/internal/me
- *   PATCH  /api/v1/internal/me    { "title"?: "...", "bio"?: "...", "species"?: "..." } – Handle
- *                                 is deliberately not editable here; once set
- *                                 at registration only a CMS admin can change it.
+ *   PATCH  /api/v1/internal/me    { "title"?: "...", "bio"?: "...", "species"?: "...",
+ *                                   "mainColor"?: "#rrggbb", "secondaryColor"?: "#rrggbb" } –
+ *                                 Handle is deliberately not editable here; once set at
+ *                                 registration only a CMS admin can change it. An empty
+ *                                 "secondaryColor" clears it, switching the card to solid-color
+ *                                 mode instead of a gradient.
  *   DELETE /api/v1/internal/me    { "handle": "..." } – must match exactly, deletes the account
  *   POST   /api/v1/internal/me/avatar      { "image": "data:image/jpeg;base64,..." } – replaces
  *                                          the avatar shown on the profile card; already cropped
@@ -146,8 +149,9 @@ class InternalApiController extends ApiController
     }
 
     /**
-     * Deliberately only accepts title/bio – Handle is permanent once set at
-     * registration and from then on only editable by a CMS admin.
+     * Deliberately only accepts title/bio/species/flagLeft/flagRight –
+     * Handle is permanent once set at registration and from then on only
+     * editable by a CMS admin.
      */
     private function updateCurrentUser(): HTTPResponse
     {
@@ -176,9 +180,51 @@ class InternalApiController extends ApiController
             $user->Species = (string) $body['species'];
         }
 
+        // Empty string clears the slot – the frontend's flag picker sends
+        // this for "remove flag" rather than a separate DELETE-style call.
+        if (array_key_exists('flagLeft', $body)) {
+            $user->FlagLeft = $this->validatedFlagKey($body['flagLeft']);
+        }
+
+        if (array_key_exists('flagRight', $body)) {
+            $user->FlagRight = $this->validatedFlagKey($body['flagRight']);
+        }
+
+        // Empty "secondaryColor" clears it, meaning "solid color mode" –
+        // mirrors the flag fields' "empty string clears the slot" convention.
+        if (array_key_exists('mainColor', $body)) {
+            $user->CardMainColor = $this->validatedColor($body['mainColor']);
+        }
+
+        if (array_key_exists('secondaryColor', $body)) {
+            $user->CardSecondaryColor = $this->validatedColor($body['secondaryColor']);
+        }
+
         $user->write();
 
         return $this->jsonResponse($user->toOwnApiData());
+    }
+
+    private function validatedFlagKey(mixed $value): string
+    {
+        $key = trim((string) $value);
+
+        if (mb_strlen($key) > User::FLAG_MAX_LENGTH) {
+            $this->error('flag key must be ' . User::FLAG_MAX_LENGTH . ' characters or fewer', 422);
+        }
+
+        return $key;
+    }
+
+    private function validatedColor(mixed $value): string
+    {
+        $color = trim((string) $value);
+
+        if (mb_strlen($color) > User::CARD_COLOR_MAX_LENGTH) {
+            $this->error('color must be ' . User::CARD_COLOR_MAX_LENGTH . ' characters or fewer', 422);
+        }
+
+        return $color;
     }
 
     /**

@@ -266,6 +266,11 @@
     "@parcel/watcher-win32-arm64" "2.6.0"
     "@parcel/watcher-win32-x64" "2.6.0"
 
+"@risadams/pride-flags@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@risadams/pride-flags/-/pride-flags-1.1.0.tgz#fee2697e66cb1afb79517be6d3eecfbce9381d2f"
+  integrity sha512-xodSUo5ddXAVvw4ZmgncIu9HgAQ+tS+a2cQPbMmeFQ5eHpc0IRO2pURrGplBnQFmyoEoCe67CTbR10qsvfGT0A==
+
 "@rollup/rollup-android-arm-eabi@4.51.0":
   version "4.51.0"
   resolved "https://registry.yarnpkg.com/@rollup/rollup-android-arm-eabi/-/rollup-android-arm-eabi-4.51.0.tgz#89eb466cb3ad10a9e4397ac7d4189ff47357d188"
@@ -530,6 +535,11 @@ fdir@^6.4.4, fdir@^6.5.0:
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
+
+flag-icons@^7.5.0:
+  version "7.5.0"
+  resolved "https://registry.yarnpkg.com/flag-icons/-/flag-icons-7.5.0.tgz#66462df3e8bc5ef3a283322a46bb9dde1b290505"
+  integrity sha512-kd+MNXviFIg5hijH766tt+3x76ele1AXlo4zDdCxIvqWZhKt4T83bOtxUOOMlTx/EcFdUMH5yvQgYlFh1EqqFg==
 
 fsevents@~2.3.2, fsevents@~2.3.3:
   version "2.3.3"

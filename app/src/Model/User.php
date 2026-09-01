@@ -28,6 +28,8 @@ use SilverStripe\Security\Security;
  * @property string $Handle
  * @property string $Bio
  * @property string $Species
+ * @property string $CardMainColor
+ * @property string $CardSecondaryColor
  */
 class User extends DataObject
 {
@@ -39,12 +41,28 @@ class User extends DataObject
     private static string $singular_name = 'User';
     private static string $plural_name = 'Users';
 
+    // Kept as an opaque, un-validated string (like ProfileLink::$Platform) –
+    // the canonical list of valid keys lives entirely in the frontend's flag
+    // registry (frontend/src/utils/flags.js), same "trust the client's enum,
+    // just cap the length" approach as social platform keys.
+    public const int FLAG_MAX_LENGTH = 32;
+
+    // Kept as opaque, un-validated strings too – just capped to fit a
+    // '#rrggbb' hex color (or empty for "no secondary color set", i.e. solid
+    // color mode instead of a gradient). The frontend's <input type="color">
+    // is the only producer of these values.
+    public const int CARD_COLOR_MAX_LENGTH = 9;
+
     private static array $db = [
         'Email' => 'Varchar(255)',
         'Title' => 'Varchar(255)',
         'Handle' => 'Varchar(255)',
         'Bio' => 'Text',
         'Species' => 'Varchar(255)',
+        'FlagLeft' => 'Varchar(32)',
+        'FlagRight' => 'Varchar(32)',
+        'CardMainColor' => 'Varchar(9)',
+        'CardSecondaryColor' => 'Varchar(9)',
     ];
 
     private static array $has_one = [
@@ -136,7 +154,7 @@ class User extends DataObject
      * Shape returned by the profile-facing APIs (public + internal listing).
      * Deliberately excludes Email. Every user's profile is public.
      *
-     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, links: array}
+     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, flagLeft: ?string, flagRight: ?string, mainColor: ?string, secondaryColor: ?string, links: array}
      */
     public function toApiData(): array
     {
@@ -148,6 +166,10 @@ class User extends DataObject
             'species' => (string) $this->Species,
             'avatarUrl' => $this->avatarUrl(),
             'backgroundUrl' => $this->backgroundUrl(),
+            'flagLeft' => (string) $this->FlagLeft ?: null,
+            'flagRight' => (string) $this->FlagRight ?: null,
+            'mainColor' => (string) $this->CardMainColor ?: null,
+            'secondaryColor' => (string) $this->CardSecondaryColor ?: null,
             'links' => array_map(
                 static fn (ProfileLink $link): array => $link->toApiData(),
                 iterator_to_array($this->ProfileLinks())

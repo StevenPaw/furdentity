@@ -28,7 +28,12 @@
   width: 100%;
   max-width: 360px;
   margin: 0 0 0.75rem;
-  text-align: right;
+  display: flex;
+  align-items: center;
+}
+
+.edit-bar_spacer {
+  flex: 1;
 }
 
 .edit-toggle {
@@ -40,6 +45,24 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+}
+
+.design-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+
+  img {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .links-section {
@@ -62,7 +85,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(128, 128, 128, 0.5);
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--card-maincolor) 50%, transparent) 0%,
+    color-mix(in srgb, var(--card-secondarycolor) 30%, transparent) 100%
+  );
   backdrop-filter: blur(40px);
   border-radius: 10px;
   padding: 0.5rem 0.75rem;

@@ -7,6 +7,10 @@ import { getPlatform } from '../utils/socialPlatforms'
 import ProfileFieldEditModal from '../components/ProfileFieldEditModal.vue'
 import LinkEditModal from '../components/LinkEditModal.vue'
 import ImageCropModal from '../components/ImageCropModal.vue'
+import FlagPickerModal from '../components/FlagPickerModal.vue'
+import FlagBadge from '../components/FlagBadge.vue'
+import DesignPickerModal from '../components/DesignPickerModal.vue'
+import designIcon from '../assets/icons/design.svg'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -21,6 +25,8 @@ const linkModalTarget = ref(null) // null (closed) | 'new' | a link object – f
 const cardLinkModalTarget = ref(null) // same, but for the 3 on-card slots
 const draggedLinkIndex = ref(null)
 const imageCropTarget = ref(null) // null (closed) | 'avatar' | 'background'
+const flagPickerSide = ref(null) // null (closed) | 'left' | 'right'
+const designModalOpen = ref(false)
 
 const isOwner = computed(() => ownHandle.value !== null && profile.value?.handle === ownHandle.value)
 // The unlimited list shown below the card.
@@ -41,6 +47,8 @@ watchEffect(async () => {
   linkModalTarget.value = null
   cardLinkModalTarget.value = null
   imageCropTarget.value = null
+  flagPickerSide.value = null
+  designModalOpen.value = false
 
   try {
     profile.value = await api.profileByHandle(handle)
@@ -69,6 +77,16 @@ function onFieldSaved(updated) {
 function onImageSaved(updated) {
   profile.value = { ...profile.value, ...updated }
   imageCropTarget.value = null
+}
+
+function onFlagSaved(updated) {
+  profile.value = { ...profile.value, ...updated }
+  flagPickerSide.value = null
+}
+
+function onDesignSaved(updated) {
+  profile.value = { ...profile.value, ...updated }
+  designModalOpen.value = false
 }
 
 function onLinkSaved(link) {
@@ -120,12 +138,29 @@ async function onLinkDrop(targetIndex) {
     :style="{ backgroundImage: `url(${profile.backgroundUrl})` }"
     aria-hidden="true"
   ></div>
-  <div class="container">
+  <div
+    class="container"
+    :style="{
+      '--card-maincolor': profile?.mainColor || '#6c5ce7',
+      '--card-secondarycolor': profile?.secondaryColor || profile?.mainColor || '#6c5ce7',
+    }"
+  >
     <template v-if="notFound">
       <p>{{ t('profile.notFound') }}</p>
     </template>
     <template v-else-if="profile">
       <p v-if="isOwner" class="edit-bar">
+        <button
+          v-if="editMode"
+          type="button"
+          class="design-toggle-btn"
+          :aria-label="t('profile.editDesign')"
+          :title="t('profile.editDesign')"
+          @click="designModalOpen = true"
+        >
+          <img :src="designIcon" alt="" />
+        </button>
+        <span class="edit-bar_spacer"></span>
         <button type="button" class="edit-toggle" @click="editMode = !editMode">
           {{ editMode ? t('profile.done') : t('profile.edit') }}
         </button>
@@ -162,6 +197,54 @@ async function onLinkDrop(targetIndex) {
             ✎
           </button>
         </div>
+        <div v-if="profile.flagLeft || editMode" class="flag-slot flag-slot--left">
+          <FlagBadge v-if="profile.flagLeft" :flag-key="profile.flagLeft" />
+          <button
+            v-else-if="editMode"
+            type="button"
+            class="flag-slot-empty"
+            :aria-label="t('profile.addFlag')"
+            :title="t('profile.addFlag')"
+            @click="flagPickerSide = 'left'"
+          >
+            +
+          </button>
+          <button
+            v-if="editMode && profile.flagLeft"
+            type="button"
+            class="flag-slot-edit"
+            :aria-label="t('profile.editFlagLeft')"
+            :title="t('profile.editFlagLeft')"
+            @click="flagPickerSide = 'left'"
+          >
+            ✎
+          </button>
+        </div>
+
+        <div v-if="profile.flagRight || editMode" class="flag-slot flag-slot--right">
+          <FlagBadge v-if="profile.flagRight" :flag-key="profile.flagRight" />
+          <button
+            v-else-if="editMode"
+            type="button"
+            class="flag-slot-empty"
+            :aria-label="t('profile.addFlag')"
+            :title="t('profile.addFlag')"
+            @click="flagPickerSide = 'right'"
+          >
+            +
+          </button>
+          <button
+            v-if="editMode && profile.flagRight"
+            type="button"
+            class="flag-slot-edit"
+            :aria-label="t('profile.editFlagRight')"
+            :title="t('profile.editFlagRight')"
+            @click="flagPickerSide = 'right'"
+          >
+            ✎
+          </button>
+        </div>
+
         <div class="card-body">
           <div class="card-row card-row--title">
             <h1 class="card-title">{{ profile.title }}</h1>
@@ -316,6 +399,22 @@ async function onLinkDrop(targetIndex) {
         :type="imageCropTarget"
         @close="imageCropTarget = null"
         @saved="onImageSaved"
+      />
+
+      <FlagPickerModal
+        v-if="flagPickerSide"
+        :side="flagPickerSide"
+        :current-key="flagPickerSide === 'left' ? profile.flagLeft : profile.flagRight"
+        @close="flagPickerSide = null"
+        @saved="onFlagSaved"
+      />
+
+      <DesignPickerModal
+        v-if="designModalOpen"
+        :main-color="profile.mainColor"
+        :secondary-color="profile.secondaryColor"
+        @close="designModalOpen = false"
+        @saved="onDesignSaved"
       />
     </template>
   </div>
