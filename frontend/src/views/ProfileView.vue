@@ -6,6 +6,7 @@ import { api, isAuthenticated } from '../api/client'
 import { getPlatform } from '../utils/socialPlatforms'
 import ProfileFieldEditModal from '../components/ProfileFieldEditModal.vue'
 import LinkEditModal from '../components/LinkEditModal.vue'
+import ImageCropModal from '../components/ImageCropModal.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -19,6 +20,7 @@ const activeField = ref(null) // 'title' | 'species' | 'bio' | null
 const linkModalTarget = ref(null) // null (closed) | 'new' | a link object – for the below-card list
 const cardLinkModalTarget = ref(null) // same, but for the 3 on-card slots
 const draggedLinkIndex = ref(null)
+const imageCropTarget = ref(null) // null (closed) | 'avatar' | 'background'
 
 const isOwner = computed(() => ownHandle.value !== null && profile.value?.handle === ownHandle.value)
 // The unlimited list shown below the card.
@@ -38,6 +40,7 @@ watchEffect(async () => {
   activeField.value = null
   linkModalTarget.value = null
   cardLinkModalTarget.value = null
+  imageCropTarget.value = null
 
   try {
     profile.value = await api.profileByHandle(handle)
@@ -61,6 +64,11 @@ watchEffect(async () => {
 function onFieldSaved(updated) {
   profile.value = { ...profile.value, ...updated }
   activeField.value = null
+}
+
+function onImageSaved(updated) {
+  profile.value = { ...profile.value, ...updated }
+  imageCropTarget.value = null
 }
 
 function onLinkSaved(link) {
@@ -106,6 +114,12 @@ async function onLinkDrop(targetIndex) {
 </script>
 
 <template>
+  <div
+    v-if="profile?.backgroundUrl"
+    class="page-backdrop"
+    :style="{ backgroundImage: `url(${profile.backgroundUrl})` }"
+    aria-hidden="true"
+  ></div>
   <div class="container">
     <template v-if="notFound">
       <p>{{ t('profile.notFound') }}</p>
@@ -118,8 +132,36 @@ async function onLinkDrop(targetIndex) {
       </p>
 
       <div class="card">
-        <div class="card-background"></div>
-        <div class="card-avatar"></div>
+        <div
+          class="card-background"
+          :style="profile.backgroundUrl ? { backgroundImage: `url(${profile.backgroundUrl})` } : null"
+        >
+          <button
+            v-if="editMode"
+            type="button"
+            class="card-image-edit-btn card-image-edit-btn--background"
+            :aria-label="t('profile.editBackground')"
+            :title="t('profile.editBackground')"
+            @click="imageCropTarget = 'background'"
+          >
+            ✎
+          </button>
+        </div>
+        <div
+          class="card-avatar"
+          :style="profile.avatarUrl ? { backgroundImage: `url(${profile.avatarUrl})` } : null"
+        >
+          <button
+            v-if="editMode"
+            type="button"
+            class="card-image-edit-btn card-image-edit-btn--avatar"
+            :aria-label="t('profile.editAvatar')"
+            :title="t('profile.editAvatar')"
+            @click="imageCropTarget = 'avatar'"
+          >
+            ✎
+          </button>
+        </div>
         <div class="card-body">
           <div class="card-row card-row--title">
             <h1 class="card-title">{{ profile.title }}</h1>
@@ -267,6 +309,13 @@ async function onLinkDrop(targetIndex) {
         @close="cardLinkModalTarget = null"
         @saved="onLinkSaved"
         @deleted="onLinkDeleted"
+      />
+
+      <ImageCropModal
+        v-if="imageCropTarget"
+        :type="imageCropTarget"
+        @close="imageCropTarget = null"
+        @saved="onImageSaved"
       />
     </template>
   </div>

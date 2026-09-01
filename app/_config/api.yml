@@ -2,10 +2,11 @@
 Name: furdentity-api
 ---
 App\Api\Support\JwtService:
-  # Lifetime of an access token in seconds (15 minutes)
-  access_token_ttl: 900
-  # Lifetime of a refresh token in seconds (14 days)
-  refresh_token_ttl: 1209600
+  # Lifetime of a session token in seconds (30 days) – re-issued with a
+  # fresh expiry on every authenticated request (see
+  # InternalApiController::init()), so this is really "stay logged in as
+  # long as you visit at least once every 30 days", not a hard cutoff.
+  session_token_ttl: 2592000
   issuer: 'furdentity'
 App\Api\AuthController:
   # How long an emailed login link stays valid, in seconds (15 minutes)

@@ -20,8 +20,11 @@
 }
 
 .card-background {
+  position: relative;
   height: 45cqw;
-  background: var(--card-background-color);
+  background-color: var(--card-background-color);
+  background-size: cover;
+  background-position: center;
 }
 
 .card-avatar {
@@ -31,8 +34,37 @@
   width: 40cqw;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background: var(--card-avatar-color);
+  background-color: var(--card-avatar-color);
+  background-size: cover;
+  background-position: center;
   transform: translateX(-50%);
+}
+
+// Sits on top of the background/avatar images themselves, so it needs its
+// own stacking context rather than reusing .card-field-edit-btn's inline
+// flow positioning.
+.card-image-edit-btn {
+  position: absolute;
+  width: 28px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid var(--card-body-color);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+
+  &--background {
+    right: 3cqw;
+    bottom: 3cqw;
+  }
+
+  &--avatar {
+    right: 0;
+    bottom: 0;
+  }
 }
 
 .card-body {
@@ -150,6 +182,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
   padding: 2cqw;
+  transition: background 0.2s ease;
 
   img {
     width: 100%;
@@ -165,6 +198,10 @@
     line-height: 1;
     opacity: 0.7;
     cursor: pointer;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
   }
 }
 

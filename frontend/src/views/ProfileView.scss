@@ -1,5 +1,23 @@
 @use './ProfileCard.scss';
 
+// The profile's own background image, reused as the whole page's backdrop –
+// blurred and darkened so it reads as atmosphere rather than a second,
+// competing image, and stays out of the way of the card/text on top of it.
+// Fixed + oversized (inset: -60px rather than 0) so the blur has image data
+// to sample past the viewport edge instead of fading to nothing there.
+// z-index: -1 relies on no ancestor introducing its own stacking context
+// (none of #app/main/.container set transform/filter/etc.) to stay behind
+// all normal-flow content without needing to touch the header/footer.
+.page-backdrop {
+  position: fixed;
+  inset: -60px;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  filter: blur(20px) brightness(0.55);
+  pointer-events: none;
+}
+
 .container {
   display: flex;
   flex-direction: column;
@@ -40,12 +58,28 @@
 }
 
 .link-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: color-mix(in srgb, canvastext 6%, canvas);
+  background: rgba(128, 128, 128, 0.5);
+  backdrop-filter: blur(40px);
   border-radius: 10px;
   padding: 0.5rem 0.75rem;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.6);
+  }
+
+  // Drag handle and edit button are separate interactive elements that
+  // need to stay clickable/draggable above .link-row's stretched hit area
+  // below – position: relative lifts them into their own stacking level.
+  .link-drag-handle,
+  .card-field-edit-btn {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .link-drag-handle {
@@ -62,6 +96,16 @@
   min-width: 0;
   color: inherit;
   text-decoration: none;
+
+  // Stretches the link's clickable area to the whole .link-item box
+  // (including its padding, and the gaps around the icon/drag handle/edit
+  // button), not just the icon+text – see .link-item's position: relative
+  // above, which this positions against.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
 }
 
 .link-icon {

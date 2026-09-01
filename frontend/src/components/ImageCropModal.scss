@@ -1,0 +1,135 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: canvas;
+  color: canvastext;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.modal-heading {
+  margin: 0;
+}
+
+.modal-error {
+  color: crimson;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+
+  button {
+    font: inherit;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .modal-cancel {
+    opacity: 0.7;
+  }
+}
+
+.crop-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.crop-pick-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  font: inherit;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px dashed currentColor;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+
+  &--secondary {
+    border-style: solid;
+    opacity: 0.6;
+  }
+}
+
+.crop-stage {
+  position: relative;
+  width: 100%;
+  margin-top: 0.75rem;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+  touch-action: none;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.crop-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+// A circular "hole" cut into an otherwise-opaque overlay via a huge
+// box-shadow spread – shows exactly the circular crop the card face itself
+// applies (see .card-avatar's border-radius: 50% in ProfileCard.scss), so
+// what's outside the circle but still inside the square stage is clearly
+// marked as "won't actually be visible".
+.crop-circle-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+// Marks where .card-avatar will actually sit on top of this background on
+// the card face – width/height/top come from the component (pixel values,
+// see AVATAR_SIZE_FRACTION/AVATAR_TOP_FRACTION), everything else is static.
+// The stage's own overflow: hidden clips it exactly like the real card
+// does when the avatar dips below the background into the body below.
+.crop-avatar-preview {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px dashed rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+
+.crop-zoom {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+}

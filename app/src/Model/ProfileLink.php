@@ -4,6 +4,8 @@ namespace App\Model;
 
 use Override;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
+use SilverStripe\Security\Security;
 
 /**
  * A single link a {@see User} has added to their public profile (e.g. their
@@ -74,21 +76,27 @@ class ProfileLink extends DataObject
         return true;
     }
 
+    /**
+     * The frontend never goes through canEdit()/canCreate()/canDelete() – it
+     * checks link ownership itself (see
+     * {@see \App\Api\InternalApiController::linkItem()}). These gate CMS
+     * access instead, mirroring {@see \App\Model\User::canEdit()}.
+     */
     #[Override]
     public function canEdit($member = null)
     {
-        return false;
+        return Permission::checkMember($member ?: Security::getCurrentUser(), 'CMS_ACCESS_App\Admin\UserAdmin');
     }
 
     #[Override]
     public function canCreate($member = null, $context = [])
     {
-        return false;
+        return $this->canEdit($member);
     }
 
     #[Override]
     public function canDelete($member = null)
     {
-        return false;
+        return $this->canEdit($member);
     }
 }

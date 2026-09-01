@@ -77,7 +77,16 @@
     "linkTitle": "Titel",
     "linkTitlePlaceholder": "z.B. Instagram",
     "linkPlatform": "Plattform",
-    "notFound": "Dieses Profil existiert nicht."
+    "notFound": "Dieses Profil existiert nicht.",
+    "editAvatar": "Profilbild bearbeiten",
+    "editBackground": "Hintergrundbild bearbeiten",
+    "crop": {
+      "avatarHeading": "Profilbild",
+      "backgroundHeading": "Hintergrundbild",
+      "chooseImage": "Bild auswählen",
+      "chooseDifferentImage": "Anderes Bild wählen",
+      "zoom": "Zoom"
+    }
   },
   "loginConfirm": {
     "heading": "Anmeldung läuft",

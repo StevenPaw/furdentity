@@ -3,7 +3,14 @@
 namespace App\Model;
 
 use Override;
+use SilverStripe\AssetAdmin\Forms\UploadField;
+use SilverStripe\Assets\Image;
+use SilverStripe\Control\Director;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridFieldAddNewButton;
+use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\LiteralField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\Security;
@@ -40,6 +47,16 @@ class User extends DataObject
         'Species' => 'Varchar(255)',
     ];
 
+    private static array $has_one = [
+        'AvatarImage' => Image::class,
+        'BackgroundImage' => Image::class,
+    ];
+
+    private static array $owns = [
+        'AvatarImage',
+        'BackgroundImage',
+    ];
+
     private static array $has_many = [
         'Sessions' => UserSession::class,
         'ProfileLinks' => ProfileLink::class,
@@ -51,9 +68,9 @@ class User extends DataObject
     ];
 
     private static array $summary_fields = [
-        'Email' => 'Email',
         'Title' => 'Name',
         'Handle' => 'Handle',
+        'Email' => 'Email',
     ];
 
     private static string $default_sort = 'Email ASC';
@@ -63,6 +80,43 @@ class User extends DataObject
     {
         $fields = parent::getCMSFields();
         $fields->dataFieldByName('Bio')?->setRows(6);
+
+        if ($this->Handle !== '' && $this->Handle !== null) {
+            $profileUrl = Director::absoluteURL('/id/' . rawurlencode($this->Handle));
+            $fields->addFieldToTab('Root.Main', LiteralField::create(
+                'ProfileLinkPreview',
+                sprintf(
+                    '<div class="field"><a href="%1$s" target="_blank" rel="noopener noreferrer">%1$s</a></div>',
+                    htmlspecialchars($profileUrl, ENT_QUOTES)
+                )
+            ), 'Email');
+        }
+
+        $fields->addFieldToTab('Root.Main', UploadField::create('AvatarImage', 'Avatar')
+            ->setFolderName('avatars')
+            ->setAllowedFileCategories('image'));
+        $fields->addFieldToTab('Root.Main', UploadField::create('BackgroundImage', 'Background image')
+            ->setFolderName('backgrounds')
+            ->setAllowedFileCategories('image'));
+
+        $fields->removeByName(['ProfileLinks', 'Sessions']);
+
+        $fields->addFieldToTab('Root.ProfileLinks', GridField::create(
+            'ProfileLinks',
+            'Profile Links',
+            $this->ProfileLinks(),
+            GridFieldConfig_RecordEditor::create()
+        ));
+
+        $sessionsConfig = GridFieldConfig_RecordEditor::create();
+        // Sessions only ever come from the login flow, never created by hand.
+        $sessionsConfig->removeComponentsByType(GridFieldAddNewButton::class);
+        $fields->addFieldToTab('Root.Sessions', GridField::create(
+            'Sessions',
+            'Sessions',
+            $this->Sessions(),
+            $sessionsConfig
+        ));
 
         return $fields;
     }
@@ -82,7 +136,7 @@ class User extends DataObject
      * Shape returned by the profile-facing APIs (public + internal listing).
      * Deliberately excludes Email. Every user's profile is public.
      *
-     * @return array{id: int, title: string, handle: string, bio: string, species: string, links: array}
+     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, links: array}
      */
     public function toApiData(): array
     {
@@ -92,11 +146,45 @@ class User extends DataObject
             'handle' => (string) $this->Handle,
             'bio' => (string) $this->Bio,
             'species' => (string) $this->Species,
+            'avatarUrl' => $this->avatarUrl(),
+            'backgroundUrl' => $this->backgroundUrl(),
             'links' => array_map(
                 static fn (ProfileLink $link): array => $link->toApiData(),
                 iterator_to_array($this->ProfileLinks())
             ),
         ];
+    }
+
+    /**
+     * Both the profile card's own self-service crop/upload flow (see
+     * {@see \App\Api\Support\ProfileImageStore}) and a CMS admin's
+     * {@see \SilverStripe\AssetAdmin\Forms\UploadField} on
+     * {@see self::getCMSFields()} write to this same relation, so whichever
+     * one was used last is simply what's here.
+     */
+    public function avatarUrl(): ?string
+    {
+        return self::cacheBustedUrl($this->AvatarImage());
+    }
+
+    public function backgroundUrl(): ?string
+    {
+        return self::cacheBustedUrl($this->BackgroundImage());
+    }
+
+    /**
+     * The image lives at a fixed, filename-stable path (see
+     * {@see \App\Api\Support\ProfileImageStore}), so a re-upload keeps the
+     * exact same URL – without a cache-buster, a browser or CDN that already
+     * cached the old content would never see the new one.
+     */
+    private static function cacheBustedUrl(Image $file): ?string
+    {
+        if (!$file->exists()) {
+            return null;
+        }
+
+        return $file->getAbsoluteURL() . '?v=' . $file->Version;
     }
 
     /**

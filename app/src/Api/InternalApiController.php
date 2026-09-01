@@ -4,6 +4,8 @@ namespace App\Api;
 
 use Override;
 use App\Api\Support\JwtService;
+use App\Api\Support\ProfileImageException;
+use App\Api\Support\ProfileImageStore;
 use App\Model\ProfileLink;
 use App\Model\User;
 use App\Model\UserSession;
@@ -13,10 +15,12 @@ use Throwable;
 
 /**
  * Internal API that feeds the own Vue frontend. Every request must carry a
- * valid access token – sent automatically as the httpOnly "furdentity_access"
- * cookie (see {@see ApiController::setAuthCookies()}), never a header the
- * frontend has to manage itself. Obtain one from the passwordless login flow
- * (POST /api/v1/auth/request-link + /confirm).
+ * valid session token – sent automatically as the httpOnly
+ * "furdentity_session" cookie (see {@see ApiController::setAuthCookie()}),
+ * never a header the frontend has to manage itself. Obtain one from the
+ * passwordless login flow (POST /api/v1/auth/request-link + /confirm).
+ * {@see self::init()} re-issues it with a fresh expiry on every request, so
+ * there's no separate refresh step – simply using the site keeps it alive.
  *
  * Authenticates against {@see User} (the app's own user model), never
  * against SilverStripe Member/Security – those are reserved for CMS admins.
@@ -26,6 +30,12 @@ use Throwable;
  *                                 is deliberately not editable here; once set
  *                                 at registration only a CMS admin can change it.
  *   DELETE /api/v1/internal/me    { "handle": "..." } – must match exactly, deletes the account
+ *   POST   /api/v1/internal/me/avatar      { "image": "data:image/jpeg;base64,..." } – replaces
+ *                                          the avatar shown on the profile card; already cropped
+ *                                          to 1:1 client-side, resized server-side (see
+ *                                          {@see \App\Api\Support\ProfileImageStore}).
+ *   POST   /api/v1/internal/me/background  Same shape, for the card's background image
+ *                                          (cropped to 9:4 client-side).
  *   POST   /api/v1/internal/logout
  *   GET    /api/v1/internal/sessions
  *   DELETE /api/v1/internal/sessions/$ID
@@ -42,6 +52,8 @@ use Throwable;
 class InternalApiController extends ApiController
 {
     private static array $url_handlers = [
+        'me/avatar' => 'uploadAvatar',
+        'me/background' => 'uploadBackground',
         'me' => 'currentUser',
         'logout' => 'logout',
         'sessions/logout-all' => 'logoutAllSessions',
@@ -54,6 +66,8 @@ class InternalApiController extends ApiController
 
     private static array $allowed_actions = [
         'currentUser',
+        'uploadAvatar',
+        'uploadBackground',
         'logout',
         'sessions',
         'revokeSession',
@@ -72,32 +86,48 @@ class InternalApiController extends ApiController
     {
         parent::init();
 
-        $accessToken = (string) Cookie::get(self::COOKIE_ACCESS);
+        $token = (string) Cookie::get(self::COOKIE_SESSION);
 
-        if ($accessToken === '') {
-            $this->error('Missing access token', 401);
+        if ($token === '') {
+            $this->error('Missing session token', 401);
         }
 
         try {
-            $payload = JwtService::create()->decode($accessToken, 'access');
+            $payload = JwtService::create()->decode($token);
         } catch (Throwable) {
-            $this->error('Invalid or expired token', 401);
+            // Unlike the old access/refresh split, there's no rotation here
+            // – an invalid token is unambiguously dead, never just "another
+            // tab already moved past it", so it's always safe to clear it.
+            $this->clearAuthCookie();
+            $this->error('Invalid or expired session', 401);
         }
 
         $session = UserSession::get()->byID((int) $payload->sid);
 
         if (!$session instanceof UserSession || !$session->Confirmed || $session->RevokedAt) {
-            $this->error('Invalid or expired token', 401);
+            $this->clearAuthCookie();
+            $this->error('Invalid or expired session', 401);
         }
 
         $user = $session->User();
 
         if (!$user->exists()) {
-            $this->error('Invalid or expired token', 401);
+            $this->clearAuthCookie();
+            $this->error('Invalid or expired session', 401);
         }
 
         $this->authenticatedUser = $user;
         $this->currentSession = $session;
+
+        // Sliding expiration: every authenticated request keeps the session
+        // alive for another full session_token_ttl, and LastUsedAt reflects
+        // actual usage for the "Sessions" list – this is the entire
+        // "stay logged in" mechanism, no separate /auth/refresh needed.
+        $session->LastUsedAt = date('Y-m-d H:i:s');
+        $session->write();
+
+        $jwtService = JwtService::create();
+        $this->setAuthCookie($jwtService->issue($user, $session), $jwtService->sessionTokenTtl());
     }
 
     public function currentUser(): HTTPResponse
@@ -175,14 +205,69 @@ class InternalApiController extends ApiController
         }
 
         $user->delete();
-        $this->clearAuthCookies();
+        $this->clearAuthCookie();
 
         return $this->jsonResponse(['deleted' => true]);
     }
 
+    public function uploadAvatar(): HTTPResponse
+    {
+        return $this->uploadProfileImage(ProfileImageStore::SLOT_AVATAR);
+    }
+
+    public function uploadBackground(): HTTPResponse
+    {
+        return $this->uploadProfileImage(ProfileImageStore::SLOT_BACKGROUND);
+    }
+
+    /**
+     * The frontend crops client-side (1:1 for the avatar, 9:4 for the
+     * background) and sends the result as a base64 data URL – simplest
+     * shape given every other write on this API is already plain JSON.
+     */
+    private function uploadProfileImage(string $slot): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $user = $this->authenticatedUser;
+
+        if ($user->Handle === '') {
+            $this->error('Account needs a handle before uploading images', 422);
+        }
+
+        $dataUrl = (string) ($this->jsonBody()['image'] ?? '');
+
+        // Base64 inflates size by ~33% – 15MB of encoded text comfortably
+        // covers any client-side crop output while still rejecting an
+        // obviously abusive payload before it's ever decoded.
+        if (strlen($dataUrl) > 15 * 1024 * 1024) {
+            $this->error('Image too large', 413);
+        }
+
+        if (!preg_match('#^data:image/(?:jpe?g|png|webp);base64,([a-zA-Z0-9+/]+=*)$#', $dataUrl, $matches)) {
+            $this->error('image must be a base64-encoded image/jpeg, image/png or image/webp data URL', 422);
+        }
+
+        $binary = base64_decode($matches[1], true);
+
+        if ($binary === false || $binary === '') {
+            $this->error('Invalid image data', 422);
+        }
+
+        try {
+            ProfileImageStore::store($user, $slot, $binary);
+        } catch (ProfileImageException $e) {
+            $this->error($e->getMessage(), 422);
+        }
+
+        return $this->jsonResponse($user->toOwnApiData());
+    }
+
     /**
      * Revokes the current session and clears the auth cookies. The frontend
-     * can't clear the httpOnly access/refresh cookies itself, so a plain
+     * can't clear the httpOnly session cookie itself, so a plain
      * client-side "log out" is no longer possible – this is the only way.
      */
     public function logout(): HTTPResponse
@@ -193,7 +278,7 @@ class InternalApiController extends ApiController
 
         $this->currentSession->RevokedAt = date('Y-m-d H:i:s');
         $this->currentSession->write();
-        $this->clearAuthCookies();
+        $this->clearAuthCookie();
 
         return $this->jsonResponse(['loggedOut' => true]);
     }
@@ -234,9 +319,9 @@ class InternalApiController extends ApiController
 
         // Revoking the device you're currently on should actually log you
         // out of it, not just leave a now-useless-server-side-but-still-
-        // cookied browser sitting there until the access token expires.
+        // cookied browser sitting there until the session token expires.
         if ((int) $session->ID === (int) $this->currentSession->ID) {
-            $this->clearAuthCookies();
+            $this->clearAuthCookie();
         }
 
         return $this->jsonResponse(['revoked' => true]);
@@ -253,7 +338,7 @@ class InternalApiController extends ApiController
             $session->write();
         }
 
-        $this->clearAuthCookies();
+        $this->clearAuthCookie();
 
         return $this->jsonResponse(['revoked' => true]);
     }

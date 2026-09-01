@@ -77,7 +77,16 @@
     "linkTitle": "Title",
     "linkTitlePlaceholder": "e.g. Instagram",
     "linkPlatform": "Platform",
-    "notFound": "This profile doesn't exist."
+    "notFound": "This profile doesn't exist.",
+    "editAvatar": "Edit avatar",
+    "editBackground": "Edit background image",
+    "crop": {
+      "avatarHeading": "Avatar",
+      "backgroundHeading": "Background image",
+      "chooseImage": "Choose image",
+      "chooseDifferentImage": "Choose a different image",
+      "zoom": "Zoom"
+    }
   },
   "loginConfirm": {
     "heading": "Logging you in",
