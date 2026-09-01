@@ -4,6 +4,7 @@ namespace App\Api;
 
 use Override;
 use SilverStripe\Control\Controller;
+use SilverStripe\Control\Cookie;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
@@ -16,6 +17,38 @@ use Throwable;
  */
 abstract class ApiController extends Controller
 {
+    // httpOnly – never readable by JS, only ever sent back to our own API.
+    protected const string COOKIE_ACCESS = 'furdentity_access';
+    protected const string COOKIE_REFRESH = 'furdentity_refresh';
+    // Deliberately NOT httpOnly – carries no secret, just lets the frontend
+    // know a session exists without being able to read the actual tokens.
+    protected const string COOKIE_AUTH_FLAG = 'furdentity_auth';
+
+    /**
+     * Sets the three auth cookies after a successful login/confirm/refresh.
+     * $ttlSeconds are converted to days since {@see Cookie::set()} expects
+     * its $expiry in days. SameSite=Strict + Secure since this is a same-
+     * origin SPA that never needs the cookie sent on a cross-site request.
+     */
+    protected function setAuthCookies(string $accessToken, string $refreshToken, int $accessTtlSeconds, int $refreshTtlSeconds): void
+    {
+        Cookie::set(self::COOKIE_ACCESS, $accessToken, $accessTtlSeconds / 86400, '/', null, true, true, Cookie::SAMESITE_STRICT);
+        Cookie::set(self::COOKIE_REFRESH, $refreshToken, $refreshTtlSeconds / 86400, '/', null, true, true, Cookie::SAMESITE_STRICT);
+        Cookie::set(self::COOKIE_AUTH_FLAG, '1', $refreshTtlSeconds / 86400, '/', null, true, false, Cookie::SAMESITE_STRICT);
+    }
+
+    /**
+     * Clears all three auth cookies (logout, session revoke of the current
+     * session, account deletion). The httpOnly ones can only ever be
+     * cleared server-side – the frontend has no way to touch them directly.
+     */
+    protected function clearAuthCookies(): void
+    {
+        Cookie::force_expiry(self::COOKIE_ACCESS, '/', null, true, true, Cookie::SAMESITE_STRICT);
+        Cookie::force_expiry(self::COOKIE_REFRESH, '/', null, true, true, Cookie::SAMESITE_STRICT);
+        Cookie::force_expiry(self::COOKIE_AUTH_FLAG, '/', null, true, false, Cookie::SAMESITE_STRICT);
+    }
+
     #[Override]
     public function handleRequest(HTTPRequest $request): HTTPResponse
     {

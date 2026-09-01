@@ -6,6 +6,7 @@ use App\Api\Support\JwtService;
 use App\Model\User;
 use App\Model\UserSession;
 use DateTime;
+use SilverStripe\Control\Cookie;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Email\Email;
 use SilverStripe\Control\HTTPResponse;
@@ -14,15 +15,24 @@ use Throwable;
 /**
  * Passwordless login for the internal API: a user requests a login link,
  * we email a one-time confirmation code, and confirming it exchanges the
- * code for a JWT pair tied to a new {@see UserSession}.
+ * code for a JWT pair tied to a new {@see UserSession}. The tokens
+ * themselves never touch the response body – they're set as httpOnly
+ * cookies (see {@see ApiController::setAuthCookies()}), so the frontend
+ * never has direct access to them at all.
  *
  *   POST /api/v1/auth/request-link { "email": "..." }
  *   POST /api/v1/auth/confirm      { "sid": 1, "code": "..." }
- *   POST /api/v1/auth/refresh      { "refreshToken": "..." }
+ *   POST /api/v1/auth/refresh      (refresh token read from its cookie)
  */
 class AuthController extends ApiController
 {
     private const string HANDLE_PATTERN = '/^[a-z0-9_-]{3,32}$/';
+
+    // How long a just-rotated-away-from refresh token is still accepted
+    // (see refresh()) – covers two tabs racing a refresh with the same
+    // about-to-be-consumed token, without meaningfully weakening security:
+    // a stolen token only ever benefits from one rotation's worth of grace.
+    private const int REFRESH_GRACE_SECONDS = 10;
 
     private static int $login_code_ttl = 900;
 
@@ -55,6 +65,10 @@ class AuthController extends ApiController
         // confirm() – an existing user's handle is never changed here), but
         // we validate them up front so the registration form gets an
         // immediate, useful error instead of a silently-ignored value.
+        if ($title !== '' && mb_strlen($title) > User::TITLE_MAX_LENGTH) {
+            $this->error('title must be ' . User::TITLE_MAX_LENGTH . ' characters or fewer', 422);
+        }
+
         if ($handle !== '') {
             if (!preg_match(self::HANDLE_PATTERN, $handle)) {
                 $this->error(
@@ -142,10 +156,10 @@ class AuthController extends ApiController
             $this->error('Method not allowed', 405);
         }
 
-        $token = trim((string) ($this->jsonBody()['refreshToken'] ?? ''));
+        $token = (string) Cookie::get(self::COOKIE_REFRESH);
 
         if ($token === '') {
-            $this->error('refreshToken is required', 422);
+            $this->error('Missing refresh token', 401);
         }
 
         try {
@@ -156,12 +170,19 @@ class AuthController extends ApiController
 
         $session = UserSession::get()->byID((int) $payload->sid);
         $jti = (string) ($payload->jti ?? '');
+        $jtiHash = hash('sha256', $jti);
+
+        $isCurrent = $session instanceof UserSession && hash_equals((string) $session->RefreshTokenHash, $jtiHash);
+        $isRecentPrevious = $session instanceof UserSession
+            && (string) $session->PreviousRefreshTokenHash !== ''
+            && hash_equals((string) $session->PreviousRefreshTokenHash, $jtiHash)
+            && strtotime((string) $session->PreviousRefreshTokenGraceExpires) > time();
 
         if (
             !$session instanceof UserSession
             || !$session->Confirmed
             || $session->RevokedAt
-            || !hash_equals($session->RefreshTokenHash, hash('sha256', $jti))
+            || (!$isCurrent && !$isRecentPrevious)
         ) {
             $this->error('Invalid or expired refresh token', 401);
         }
@@ -198,20 +219,29 @@ class AuthController extends ApiController
 
     /**
      * Rotates the session's refresh-token hash and issues a fresh token
-     * pair for it. Used both when a login link is confirmed and on every
-     * subsequent refresh, so a stolen refresh token stops working the
-     * moment the legitimate client rotates past it.
+     * pair for it, set as httpOnly cookies (see {@see ApiController}). Used
+     * both when a login link is confirmed and on every subsequent refresh,
+     * so a stolen refresh token stops working once the legitimate client
+     * rotates past it – modulo the short grace window in refresh() for
+     * same-browser, multi-tab races.
      *
-     * @return array{token: string, refreshToken: string, expiresIn: int, tokenType: string}
+     * @return array{handle: string}
      */
     private function rotateAndIssue(User $user, UserSession $session): array
     {
         $jti = bin2hex(random_bytes(32));
+
+        $session->PreviousRefreshTokenHash = $session->RefreshTokenHash;
+        $session->PreviousRefreshTokenGraceExpires = $this->inSeconds(self::REFRESH_GRACE_SECONDS);
         $session->RefreshTokenHash = hash('sha256', $jti);
         $session->LastUsedAt = date('Y-m-d H:i:s');
         $session->write();
 
-        return JwtService::create()->issueTokenPair($user, $session, $jti);
+        $jwtService = JwtService::create();
+        $pair = $jwtService->issueTokenPair($user, $session, $jti);
+        $this->setAuthCookies($pair['token'], $pair['refreshToken'], $pair['expiresIn'], $jwtService->refreshTokenTtl());
+
+        return ['handle' => (string) $user->Handle];
     }
 
     private function sendLoginEmail(User $user, UserSession $session, string $code): void

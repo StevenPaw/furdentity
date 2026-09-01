@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { api, storeTokens } from '../api/client'
+import { api } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,8 +22,8 @@ onMounted(async () => {
   }
 
   try {
-    storeTokens(await api.confirmLogin(sid, code))
-    router.push({ name: 'app-home' })
+    const result = await api.confirmLogin(sid, code)
+    router.push({ name: 'profile', params: { handle: result.handle } })
   } catch (e) {
     state.value = 'error'
     error.value = e.message

@@ -1,0 +1,68 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 360px;
+  background: canvas;
+  color: canvastext;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+
+  label {
+    display: block;
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    font: inherit;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #8888;
+  }
+}
+
+.modal-char-count {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.modal-error {
+  color: crimson;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+
+  button {
+    font: inherit;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .modal-cancel {
+    opacity: 0.7;
+  }
+}

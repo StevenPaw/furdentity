@@ -28,6 +28,8 @@ use SilverStripe\ORM\DataObject;
  * @property string $CodeExpires
  * @property bool $Confirmed
  * @property string $RefreshTokenHash
+ * @property string $PreviousRefreshTokenHash
+ * @property string $PreviousRefreshTokenGraceExpires
  * @property string $UserAgent
  * @property string $IPAddress
  * @property string $LastUsedAt
@@ -48,6 +50,16 @@ class UserSession extends DataObject
         'CodeExpires' => 'Datetime',
         'Confirmed' => 'Boolean(0)',
         'RefreshTokenHash' => 'Varchar(64)',
+        // Lets a refresh token that was *just* rotated away from still be
+        // accepted for a short grace window (see AuthController::refresh()).
+        // Needed because two browser tabs can each independently notice an
+        // expired access token and race their own /auth/refresh call with
+        // the same (about-to-be-consumed) refresh token; without this, the
+        // tab that loses the race gets a hard 401 for a token its own
+        // browser session just legitimately used, and is logged out even
+        // though the session itself is still perfectly valid.
+        'PreviousRefreshTokenHash' => 'Varchar(64)',
+        'PreviousRefreshTokenGraceExpires' => 'Datetime',
         'UserAgent' => 'Varchar(512)',
         'IPAddress' => 'Varchar(64)',
         'LastUsedAt' => 'Datetime',

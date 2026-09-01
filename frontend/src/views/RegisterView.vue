@@ -40,20 +40,20 @@ async function submit() {
         <label for="email">{{ t('login.email') }}</label>
         <input id="email" v-model="email" type="email" autocomplete="email" required />
 
-        <label for="title">{{ t('register.username') }}</label>
-        <input id="title" v-model="title" type="text" autocomplete="nickname" required />
-        <p class="hint">{{ t('register.usernameHint') }}</p>
+        <label for="title">{{ t('register.title') }}</label>
+        <input id="title" v-model="title" type="text" autocomplete="nickname" required maxlength="30" />
+        <p class="hint">{{ title.length }}/30 {{ t('profile.characters') }} · {{ t('register.titleHint') }}</p>
 
-        <label for="handle">{{ t('register.handle') }}</label>
-        <input
+        <label for="handle">{{ t('register.username') }}</label>
+        <p class="url-preview">furdentity.com/id/<input
           id="handle"
           v-model="handle"
           type="text"
           pattern="[a-z0-9_\-]{3,32}"
           autocomplete="off"
           required
-        />
-        <p class="hint">{{ t('register.handleHint') }}</p>
+        /></p>
+        <p class="hint">{{ t('register.usernameHint') }}</p>
 
         <p v-if="error" style="color: crimson">{{ error }}</p>
 

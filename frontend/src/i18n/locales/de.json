@@ -3,8 +3,9 @@
     "title": "Furdentity"
   },
   "nav": {
-    "myProfiles": "Meine Profile",
-    "sessions": "Sitzungen",
+    "myProfile": "Mein Profil",
+    "settings": "Einstellungen",
+    "language": "Sprache",
     "register": "Profil erstellen",
     "login": "Anmelden",
     "logout": "Abmelden"
@@ -36,13 +37,8 @@
     ]
   },
   "home": {
-    "myProfileHeading": "Mein Profil",
-    "handleFixed": "Deine Kennung ist dauerhaft festgelegt und kann nur von einem Admin geändert werden.",
-    "bio": "Biografie",
-    "save": "Speichern",
-    "saved": "Gespeichert.",
-    "profilesHeading": "Alle Profile",
-    "noProfiles": "Noch keine Profile."
+    "species": "Spezies",
+    "bio": "Biografie"
   },
   "login": {
     "heading": "Anmelden",
@@ -56,12 +52,32 @@
   "register": {
     "heading": "Profil erstellen",
     "intro": "Gib deine E-Mail-Adresse ein, wir schicken dir einen Link zum Anlegen deines Kontos – ganz ohne Passwort.",
+    "title": "Anzeigename",
+    "titleHint": "Wird als dein Anzeigename verwendet. Kannst du später jederzeit ändern.",
     "username": "Benutzername",
-    "usernameHint": "Wird als dein Anzeigename verwendet. Kannst du später jederzeit ändern.",
-    "handle": "Kennung",
-    "handleHint": "3-32 Zeichen, nur Kleinbuchstaben/Zahlen/-/_. Diese ist dauerhaft und kann danach nur von einem Admin geändert werden.",
+    "usernameHint": "3-32 Zeichen, nur Kleinbuchstaben/Zahlen/-/_. Dieser kann später nicht mehr verändert werden.",
     "submit": "Login-Link senden",
     "haveAccount": "Schon ein Konto?"
+  },
+  "profile": {
+    "edit": "Bearbeiten",
+    "done": "Fertig",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "fieldRequired": "Darf nicht leer sein.",
+    "addSpecies": "Spezies hinzufügen",
+    "addBio": "Bio hinzufügen",
+    "addLink": "Link hinzufügen",
+    "delete": "Löschen",
+    "characters": "Zeichen",
+    "linkModalTitle": "Link",
+    "linkUrl": "URL",
+    "linkUrlRequired": "URL darf nicht leer sein.",
+    "linkTitle": "Titel",
+    "linkTitlePlaceholder": "z.B. Instagram",
+    "linkPlatform": "Plattform",
+    "notFound": "Dieses Profil existiert nicht."
   },
   "loginConfirm": {
     "heading": "Anmeldung läuft",
@@ -77,6 +93,15 @@
     "revoke": "Abmelden",
     "logoutAll": "Überall abmelden",
     "none": "Keine aktiven Sitzungen."
+  },
+  "settings": {
+    "heading": "Einstellungen",
+    "dangerZoneHeading": "Gefahrenzone",
+    "deleteWarning": "Dies löscht dein Profil und alle zugehörigen Daten dauerhaft. Das kann nicht rückgängig gemacht werden.",
+    "deleteProfile": "Profil löschen",
+    "deleteConfirmLabel": "Gib deinen Benutzernamen \"{handle}\" ein, um zu bestätigen.",
+    "deleteButton": "Profil endgültig löschen",
+    "deleteMismatch": "Der eingegebene Benutzername stimmt nicht überein."
   },
   "about": {
     "heading": "About us",

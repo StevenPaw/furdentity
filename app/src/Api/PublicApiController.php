@@ -18,12 +18,14 @@ use SilverStripe\Core\Environment;
  *
  *   GET /api/v1/public/ping
  *   GET /api/v1/public/profiles
+ *   GET /api/v1/public/profile/$Handle  – single profile, $Handle passed as $ID
  */
 class PublicApiController extends ApiController
 {
     private static array $allowed_actions = [
         'ping',
         'profiles',
+        'profile',
     ];
 
     #[Override]
@@ -73,6 +75,18 @@ class PublicApiController extends ApiController
         }
 
         return $this->jsonResponse(['data' => $data]);
+    }
+
+    public function profile(): HTTPResponse
+    {
+        $handle = (string) $this->getRequest()->param('ID');
+        $user = User::get()->filter('Handle', $handle)->first();
+
+        if (!$user instanceof User) {
+            $this->error('Profile not found', 404);
+        }
+
+        return $this->jsonResponse($user->toApiData());
     }
 
     private function withCors(HTTPResponse $response): HTTPResponse

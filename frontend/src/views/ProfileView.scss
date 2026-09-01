@@ -1,0 +1,95 @@
+@use './ProfileCard.scss';
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.edit-bar {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 0 0.75rem;
+  text-align: right;
+}
+
+.edit-toggle {
+  display: inline-block;
+  font: inherit;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.links-section {
+  width: 100%;
+  max-width: 360px;
+  margin-top: 1.25rem;
+}
+
+.links-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: color-mix(in srgb, canvastext 6%, canvas);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.link-drag-handle {
+  flex: none;
+  cursor: grab;
+  opacity: 0.5;
+}
+
+.link-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: none;
+  padding: 5px;
+  border-radius: 50%;
+  background: #2e2e33;
+}
+
+.link-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-add-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font: inherit;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px dashed currentColor;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+}

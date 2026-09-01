@@ -1,0 +1,185 @@
+// ID-1 (ISO/IEC 7810), portrait: 85.60 × 53.98mm, so width:height = 53.98:85.60.
+// `container-type: size` turns the card into a query container for BOTH
+// axes, so cqw/cqh below track its actual rendered width/height rather than
+// the viewport – every measurement on the card is a fraction of the card
+// itself, so the whole face scales together and keeps its proportions no
+// matter how big or small the card ends up on a given screen.
+.card {
+  --card-background-color: #6c5ce7;
+  --card-body-color: #2e2e33;
+  --card-avatar-color: #5ac85a;
+
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 53.98 / 85.6;
+  container-type: size;
+  border-radius: 1cqw;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.card-background {
+  height: 45cqw;
+  background: var(--card-background-color);
+}
+
+.card-avatar {
+  position: absolute;
+  top: 20cqw;
+  left: 50%;
+  width: 40cqw;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--card-avatar-color);
+  transform: translateX(-50%);
+}
+
+.card-body {
+  height: calc(100cqh - 45cqw);
+  background: var(--card-body-color);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 20cqw 7cqw 5cqw;
+  text-align: center;
+  overflow: hidden;
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.8cqw;
+}
+
+.card-row--species {
+  margin-top: 1.4cqw;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 6.2cqw;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  // Belt-and-suspenders: the edit modal already caps the display name at 16
+  // characters, but this guarantees the card face itself never grows past
+  // 2 lines no matter what ends up in Title (e.g. pre-existing data).
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.card-species {
+  margin: 0;
+  font-size: 4.4cqw;
+  opacity: 0.8;
+
+  &--empty {
+    opacity: 0.5;
+    font-style: italic;
+  }
+}
+
+.card-divider {
+  margin: 4.4cqw auto;
+  width: 60%;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card-bio {
+  margin: 0;
+  font-size: 4cqw;
+  line-height: 1.6;
+  opacity: 0.9;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+
+  &--empty {
+    opacity: 0.5;
+    font-style: italic;
+  }
+}
+
+.card-field-edit-btn {
+  flex: none;
+  width: 22px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+// Up to 3 links placed directly on the card face – 3 independent slots,
+// managed completely separately from the unlimited list below the card.
+// `margin-top: auto` on a flex child of .card-body pins the row to the
+// bottom of the fixed-height card regardless of how much (or little) space
+// the title/species/bio take up above it. Fixed px sizing (matching
+// .card-field-edit-btn) rather than cqw, so these stay a sane, tappable size
+// on a tiny card instead of shrinking to near-nothing.
+.card-links {
+  display: flex;
+  justify-content: center;
+  gap: 10cqw;
+  margin-top: auto;
+  padding-top: 5cqw;
+}
+
+.card-link-slot {
+  position: relative;
+  flex: none;
+}
+
+.card-link-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 14cqw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2cqw;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &--empty {
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.7;
+    cursor: pointer;
+  }
+}
+
+.card-link-slot-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 16px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid var(--card-body-color);
+  border-radius: 50%;
+  background: #000;
+  color: inherit;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+}

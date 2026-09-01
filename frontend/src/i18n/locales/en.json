@@ -3,8 +3,9 @@
     "title": "Furdentity"
   },
   "nav": {
-    "myProfiles": "My profiles",
-    "sessions": "Sessions",
+    "myProfile": "My profile",
+    "settings": "Settings",
+    "language": "Language",
     "register": "Create profile",
     "login": "Login",
     "logout": "Logout"
@@ -36,13 +37,8 @@
     ]
   },
   "home": {
-    "myProfileHeading": "My profile",
-    "handleFixed": "Your handle is permanent and can only be changed by an admin.",
-    "bio": "Bio",
-    "save": "Save",
-    "saved": "Saved.",
-    "profilesHeading": "All profiles",
-    "noProfiles": "No profiles yet."
+    "species": "Species",
+    "bio": "Bio"
   },
   "login": {
     "heading": "Login",
@@ -56,12 +52,32 @@
   "register": {
     "heading": "Create your profile",
     "intro": "Enter your email and we'll send you a link to create your account – no password needed.",
+    "title": "Display name",
+    "titleHint": "Shown as your display name. You can change this anytime later.",
     "username": "Username",
-    "usernameHint": "Shown as your display name. You can change this anytime later.",
-    "handle": "Handle",
-    "handleHint": "3-32 characters, lowercase letters/numbers/-/_ only. This is permanent and can only be changed by an admin afterwards.",
+    "usernameHint": "3-32 characters, lowercase letters/numbers/-/_ only. This is permanent and can only be changed by an admin afterwards.",
     "submit": "Send login link",
     "haveAccount": "Already have an account?"
+  },
+  "profile": {
+    "edit": "Edit",
+    "done": "Done",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "fieldRequired": "This can't be empty.",
+    "addSpecies": "Add species",
+    "addBio": "Add bio",
+    "addLink": "Add link",
+    "delete": "Delete",
+    "characters": "characters",
+    "linkModalTitle": "Link",
+    "linkUrl": "URL",
+    "linkUrlRequired": "URL can't be empty.",
+    "linkTitle": "Title",
+    "linkTitlePlaceholder": "e.g. Instagram",
+    "linkPlatform": "Platform",
+    "notFound": "This profile doesn't exist."
   },
   "loginConfirm": {
     "heading": "Logging you in",
@@ -77,6 +93,15 @@
     "revoke": "Log out",
     "logoutAll": "Log out everywhere",
     "none": "No active sessions."
+  },
+  "settings": {
+    "heading": "Settings",
+    "dangerZoneHeading": "Danger zone",
+    "deleteWarning": "This permanently deletes your profile and all associated data. This cannot be undone.",
+    "deleteProfile": "Delete profile",
+    "deleteConfirmLabel": "Type your username \"{handle}\" to confirm.",
+    "deleteButton": "Permanently delete profile",
+    "deleteMismatch": "The username you entered doesn't match."
   },
   "about": {
     "heading": "About us",

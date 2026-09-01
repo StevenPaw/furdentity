@@ -1,15 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LandingPage from './views/LandingPage.vue'
-import HomeView from './views/HomeView.vue'
 import LoginView from './views/LoginView.vue'
 import LoginConfirmView from './views/LoginConfirmView.vue'
 import RegisterView from './views/RegisterView.vue'
-import SessionsView from './views/SessionsView.vue'
+import ProfileView from './views/ProfileView.vue'
+import SettingsView from './views/SettingsView.vue'
 import AboutView from './views/AboutView.vue'
 import ImpressumView from './views/legal/ImpressumView.vue'
 import DatenschutzView from './views/legal/DatenschutzView.vue'
 import NotFoundView from './views/NotFoundView.vue'
-import { isAuthenticated } from './api/client'
+import { api, isAuthenticated } from './api/client'
 
 const router = createRouter({
   history: createWebHistory('/'),
@@ -36,9 +36,23 @@ const router = createRouter({
       component: DatenschutzView,
       meta: { public: true },
     },
+    { path: '/id/:handle', name: 'profile', component: ProfileView, meta: { public: true } },
     // Everything below requires authentication (see the global guard).
-    { path: '/app', name: 'app-home', component: HomeView },
-    { path: '/app/sessions', name: 'sessions', component: SessionsView },
+    {
+      path: '/app',
+      name: 'app-home',
+      // No profile page of its own – just sends the user straight to their
+      // own /id/:handle card, which is where profile editing now lives.
+      beforeEnter: async () => {
+        try {
+          const me = await api.me()
+          return { name: 'profile', params: { handle: me.handle } }
+        } catch {
+          return { name: 'login' }
+        }
+      },
+    },
+    { path: '/settings', name: 'settings', component: SettingsView },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
 })

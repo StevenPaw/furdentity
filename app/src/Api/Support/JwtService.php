@@ -58,6 +58,11 @@ class JwtService
         ];
     }
 
+    public function refreshTokenTtl(): int
+    {
+        return (int) $this->config()->get('refresh_token_ttl');
+    }
+
     /**
      * Decode and validate a token, ensuring it is of the expected type
      * ("access" or "refresh").

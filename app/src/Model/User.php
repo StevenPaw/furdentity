@@ -20,9 +20,14 @@ use SilverStripe\Security\Security;
  * @property string $Title
  * @property string $Handle
  * @property string $Bio
+ * @property string $Species
  */
 class User extends DataObject
 {
+    // Keeps the display name to what fits in 2 lines on the profile card
+    // face (see .card-title's line-clamp in ProfileCard.scss).
+    public const int TITLE_MAX_LENGTH = 30;
+
     private static string $table_name = 'AppUser';
     private static string $singular_name = 'User';
     private static string $plural_name = 'Users';
@@ -32,10 +37,12 @@ class User extends DataObject
         'Title' => 'Varchar(255)',
         'Handle' => 'Varchar(255)',
         'Bio' => 'Text',
+        'Species' => 'Varchar(255)',
     ];
 
     private static array $has_many = [
         'Sessions' => UserSession::class,
+        'ProfileLinks' => ProfileLink::class,
     ];
 
     private static array $indexes = [
@@ -75,7 +82,7 @@ class User extends DataObject
      * Shape returned by the profile-facing APIs (public + internal listing).
      * Deliberately excludes Email. Every user's profile is public.
      *
-     * @return array{id: int, title: string, handle: string, bio: string}
+     * @return array{id: int, title: string, handle: string, bio: string, species: string, links: array}
      */
     public function toApiData(): array
     {
@@ -84,6 +91,11 @@ class User extends DataObject
             'title' => (string) $this->Title,
             'handle' => (string) $this->Handle,
             'bio' => (string) $this->Bio,
+            'species' => (string) $this->Species,
+            'links' => array_map(
+                static fn (ProfileLink $link): array => $link->toApiData(),
+                iterator_to_array($this->ProfileLinks())
+            ),
         ];
     }
 
