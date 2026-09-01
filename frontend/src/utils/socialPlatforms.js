@@ -3,6 +3,7 @@ import iconDiscord from '../assets/social/logo_discord.png'
 import iconDribbble from '../assets/social/logo_dribbble.png'
 import iconFacebook from '../assets/social/logo_facebook.png'
 import iconFlickr from '../assets/social/logo_flickr.png'
+import iconFuraffinity from '../assets/social/logo_furaffinity.svg'
 import iconGithub from '../assets/social/logo_github.png'
 import iconInstagram from '../assets/social/logo_instagram.png'
 import iconItchio from '../assets/social/logo_itchio.png'
@@ -60,6 +61,7 @@ export const PLATFORMS = [
   { key: 'flickr', label: 'Flickr', icon: iconFlickr, hosts: ['flickr.com'] },
   { key: 'dribbble', label: 'Dribbble', icon: iconDribbble, hosts: ['dribbble.com'] },
   { key: 'behance', label: 'Behance', icon: iconBehance, hosts: ['behance.net'] },
+  { key: 'furaffinity', label: 'Fur Affinity', icon: iconFuraffinity, hosts: ['furaffinity.net'] },
   { key: 'itchio', label: 'itch.io', icon: iconItchio, hosts: ['itch.io'] },
   { key: 'mail', label: 'E-Mail', icon: iconMail, hosts: [] },
 ]

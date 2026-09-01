@@ -38,11 +38,17 @@
   left: 50%;
   width: 40cqw;
   aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background-color: var(--card-avatar-color);
+  // --card-avatar-radius/--card-avatar-clip-path come from ProfileView.vue's
+  // inline style on .container (see avatarShapeStyle()), same pattern as
+  // --card-maincolor. clip-path is what makes the hexagon shape possible -
+  // border-radius alone can't produce it - and drop-shadow (rather than
+  // box-shadow) is used above so the shadow follows the clipped outline too.
+  border-radius: var(--card-avatar-radius, 50%);
+  clip-path: var(--card-avatar-clip-path, none);
   background-size: cover;
   background-position: center;
   transform: translateX(-50%);
+  filter: drop-shadow(0 -4px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 // Sits on top of the background/avatar images themselves, so it needs its

@@ -17,15 +17,28 @@ use SilverStripe\Core\Environment;
  * convenient for local development.
  *
  *   GET /api/v1/public/ping
- *   GET /api/v1/public/profiles
- *   GET /api/v1/public/profile/$Handle  – single profile, $Handle passed as $ID
+ *   GET /api/v1/public/profiles              – every User::VISIBILITY_PUBLIC profile
+ *   GET /api/v1/public/profile/$Handle        – single profile, $Handle passed as $ID;
+ *                                              404 if the handle doesn't exist, 403 if
+ *                                              it exists but is User::VISIBILITY_HIDDEN
+ *   GET /api/v1/public/randomProfiles?limit=N – up to $limit random
+ *                                              User::VISIBILITY_PUBLIC profiles, for the
+ *                                              homepage carousel (unlisted/hidden profiles
+ *                                              never appear here, by design)
  */
 class PublicApiController extends ApiController
 {
+    // Homepage carousel default/ceiling – matches the number the frontend
+    // asks for (see ProfileCarousel.vue), the ceiling just guards against an
+    // arbitrarily large `limit` query param.
+    private const int RANDOM_PROFILES_DEFAULT_LIMIT = 16;
+    private const int RANDOM_PROFILES_MAX_LIMIT = 50;
+
     private static array $allowed_actions = [
         'ping',
         'profiles',
         'profile',
+        'randomProfiles',
     ];
 
     #[Override]
@@ -70,7 +83,7 @@ class PublicApiController extends ApiController
     {
         $data = [];
 
-        foreach (User::get() as $user) {
+        foreach (User::get()->filter('Visibility', User::VISIBILITY_PUBLIC) as $user) {
             $data[] = $user->toApiData();
         }
 
@@ -86,7 +99,40 @@ class PublicApiController extends ApiController
             $this->error('Profile not found', 404);
         }
 
+        // Unlisted behaves exactly like public here – it's only excluded
+        // from profiles()/randomProfiles(), never from a direct link.
+        if ($user->Visibility === User::VISIBILITY_HIDDEN) {
+            $this->error('This profile is private', 403);
+        }
+
         return $this->jsonResponse($user->toApiData());
+    }
+
+    /**
+     * Backs the homepage's "recently joined" carousel. Deliberately a
+     * separate PHP-side shuffle rather than an ORDER BY RAND() – this app's
+     * user count is small enough that fetching every public profile and
+     * shuffling in memory is simpler and stays portable across DB backends.
+     */
+    public function randomProfiles(): HTTPResponse
+    {
+        $limit = (int) $this->getRequest()->getVar('limit');
+
+        if ($limit <= 0) {
+            $limit = self::RANDOM_PROFILES_DEFAULT_LIMIT;
+        }
+
+        $limit = min($limit, self::RANDOM_PROFILES_MAX_LIMIT);
+
+        $users = iterator_to_array(User::get()->filter('Visibility', User::VISIBILITY_PUBLIC), false);
+        shuffle($users);
+
+        $data = array_map(
+            static fn (User $user): array => $user->toApiData(),
+            array_slice($users, 0, $limit)
+        );
+
+        return $this->jsonResponse(['data' => $data]);
     }
 
     private function withCors(HTTPResponse $response): HTTPResponse

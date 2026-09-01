@@ -1,6 +1,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import logo from '../assets/Furdentity-Logo-White.svg'
+import ProfileCarousel from '../components/ProfileCarousel.vue'
 
 const { t, tm } = useI18n()
 </script>
@@ -13,6 +14,8 @@ const { t, tm } = useI18n()
       <p class="hero-subtitle">{{ t('landing.heroSubtitle') }}</p>
       <RouterLink to="/register" class="cta">{{ t('landing.cta') }}</RouterLink>
     </section>
+
+    <ProfileCarousel />
 
     <section class="features container">
       <div v-for="feature in tm('landing.features')" :key="feature.title" class="feature">

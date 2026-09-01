@@ -9,6 +9,7 @@ use DateTime;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Email\Email;
 use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Core\Environment;
 
 /**
  * Passwordless login for the internal API: a user requests a login link,
@@ -176,7 +177,18 @@ class AuthController extends ApiController
             'code' => $code,
         ]);
 
+        // Without an explicit From, SilverStripe defaults to
+        // no-reply@<host> (see Email::getDefaultFrom()) – a domain that
+        // isn't the authenticated MAILER_DSN mailbox and has no matching
+        // SPF/DKIM record, so receiving servers (Gmail included) silently
+        // drop or spam-box it even though the SMTP send itself succeeds.
+        // Sending "From" the same mailbox MAILER_DSN authenticates as keeps
+        // it aligned with that domain's SPF record.
         Email::create()
+            ->setFrom(
+                (string) Environment::getEnv('APP_SMTP_USERNAME'),
+                _t(self::class . '.EMAIL_FROM_NAME', 'Furdentity')
+            )
             ->setTo($user->Email)
             ->setSubject(_t(self::class . '.EMAIL_SUBJECT', 'Your Furdentity login link'))
             ->setBody(sprintf(

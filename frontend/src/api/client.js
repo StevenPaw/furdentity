@@ -41,7 +41,9 @@ async function request(path, { method = 'GET', body } = {}) {
 
   if (!response.ok) {
     if (response.status === 401) syncAuthState()
-    throw new Error(data?.error?.message || `Request failed (${response.status})`)
+    const err = new Error(data?.error?.message || `Request failed (${response.status})`)
+    err.status = response.status
+    throw err
   }
 
   return data
@@ -51,6 +53,7 @@ export const api = {
   ping: () => request('/public/ping'),
   publicProfiles: () => request('/public/profiles'),
   profileByHandle: (handle) => request(`/public/profile/${encodeURIComponent(handle)}`),
+  randomProfiles: (limit) => request(`/public/randomProfiles?limit=${encodeURIComponent(limit)}`),
   requestLoginLink: (email, title, handle) =>
     request('/auth/request-link', { method: 'POST', body: { email, title, handle } }),
   confirmLogin: async (sid, code) => {

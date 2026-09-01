@@ -20,6 +20,7 @@
     "heroTitle": "One identity for every furry corner of the internet",
     "heroSubtitle": "Furdentity links your fursona's pages, socials and communities into a single, shareable profile.",
     "cta": "Create your profile",
+    "carouselTitle": "Recently joined",
     "ctaBandTitle": "Ready to bring your identity together?",
     "features": [
       {
@@ -78,6 +79,7 @@
     "linkTitlePlaceholder": "e.g. Instagram",
     "linkPlatform": "Platform",
     "notFound": "This profile doesn't exist.",
+    "private": "This profile has been set to private by its owner.",
     "editAvatar": "Edit avatar",
     "editBackground": "Edit background image",
     "editFlagLeft": "Edit left flag",
@@ -94,6 +96,11 @@
     "designMainColor": "Primary color",
     "designSecondaryColor": "Secondary color",
     "designUseGradient": "Use gradient",
+    "designAvatarShape": "Avatar shape",
+    "designShapeCircle": "Circle",
+    "designShapeRoundedSquare": "Rounded square",
+    "designShapeSquare": "Square",
+    "designShapeHexagon": "Hexagon",
     "crop": {
       "avatarHeading": "Avatar",
       "backgroundHeading": "Background image",
@@ -119,6 +126,22 @@
   },
   "settings": {
     "heading": "Settings",
+    "privacyHeading": "Privacy",
+    "privacyHint": "Controls who can see your profile.",
+    "visibility": {
+      "public": {
+        "label": "Public",
+        "description": "Shown on the homepage's random profile carousel and reachable by anyone with the link."
+      },
+      "unlisted": {
+        "label": "Unlisted",
+        "description": "Never shown on the homepage, but still reachable by anyone with the direct link."
+      },
+      "hidden": {
+        "label": "Hidden",
+        "description": "Not reachable by anyone but you – use this while you're still setting things up."
+      }
+    },
     "dangerZoneHeading": "Danger zone",
     "deleteWarning": "This permanently deletes your profile and all associated data. This cannot be undone.",
     "deleteProfile": "Delete profile",

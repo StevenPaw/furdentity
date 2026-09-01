@@ -18,6 +18,10 @@ const deleteConfirmInput = ref('')
 const deleteError = ref('')
 const deleting = ref(false)
 
+const VISIBILITIES = ['public', 'unlisted', 'hidden']
+const visibilitySaving = ref(false)
+const visibilityError = ref('')
+
 async function load() {
   error.value = ''
   try {
@@ -32,6 +36,20 @@ async function loadMe() {
     me.value = await api.me()
   } catch {
     // The sessions list above will surface auth problems; nothing extra to show here.
+  }
+}
+
+async function setVisibility(visibility) {
+  if (visibility === me.value?.visibility) return
+
+  visibilitySaving.value = true
+  visibilityError.value = ''
+  try {
+    me.value = await api.updateMe({ visibility })
+  } catch (e) {
+    visibilityError.value = e.message
+  } finally {
+    visibilitySaving.value = false
   }
 }
 
@@ -125,6 +143,30 @@ onMounted(() => {
         {{ t('sessions.logoutAll') }}
       </button>
     </p>
+
+    <div class="privacy-section">
+      <h2>{{ t('settings.privacyHeading') }}</h2>
+      <p class="hint">{{ t('settings.privacyHint') }}</p>
+
+      <div class="visibility-picker" role="radiogroup" :aria-label="t('settings.privacyHeading')">
+        <label v-for="value in VISIBILITIES" :key="value" class="visibility-option">
+          <input
+            type="radio"
+            name="visibility"
+            :value="value"
+            :checked="(me?.visibility || 'public') === value"
+            :disabled="visibilitySaving"
+            @change="setVisibility(value)"
+          />
+          <span>
+            <strong>{{ t(`settings.visibility.${value}.label`) }}</strong>
+            <span class="hint">{{ t(`settings.visibility.${value}.description`) }}</span>
+          </span>
+        </label>
+      </div>
+
+      <p v-if="visibilityError" style="color: crimson">{{ visibilityError }}</p>
+    </div>
 
     <div class="danger-zone">
       <h2>{{ t('settings.dangerZoneHeading') }}</h2>

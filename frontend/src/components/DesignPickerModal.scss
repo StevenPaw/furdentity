@@ -55,6 +55,42 @@
   }
 }
 
+.design-field-label {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.shape-picker {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+}
+
+.shape-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #8888;
+  background: none;
+  cursor: pointer;
+
+  &--active {
+    border-color: canvastext;
+    background: color-mix(in srgb, canvastext 10%, transparent);
+  }
+}
+
+.shape-option-swatch {
+  width: 26px;
+  height: 26px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
 .modal-error {
   color: crimson;
   margin: 0.5rem 0 0;

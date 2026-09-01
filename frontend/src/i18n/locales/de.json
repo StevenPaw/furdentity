@@ -20,6 +20,7 @@
     "heroTitle": "Eine Identität für jede furry Ecke des Internets",
     "heroSubtitle": "Furdentity verbindet die Seiten, Social-Media-Profile und Communities deiner Fursona zu einem einzigen, teilbaren Profil.",
     "cta": "Profil erstellen",
+    "carouselTitle": "Kürzlich dazugekommen",
     "ctaBandTitle": "Bereit, deine Identität zu bündeln?",
     "features": [
       {
@@ -78,6 +79,7 @@
     "linkTitlePlaceholder": "z.B. Instagram",
     "linkPlatform": "Plattform",
     "notFound": "Dieses Profil existiert nicht.",
+    "private": "Dieses Profil wurde von seinem Besitzer auf privat gestellt.",
     "editAvatar": "Profilbild bearbeiten",
     "editBackground": "Hintergrundbild bearbeiten",
     "editFlagLeft": "Linke Flagge bearbeiten",
@@ -94,6 +96,11 @@
     "designMainColor": "Primärfarbe",
     "designSecondaryColor": "Sekundärfarbe",
     "designUseGradient": "Verlauf verwenden",
+    "designAvatarShape": "Avatar-Form",
+    "designShapeCircle": "Kreis",
+    "designShapeRoundedSquare": "Abgerundetes Quadrat",
+    "designShapeSquare": "Eckiges Quadrat",
+    "designShapeHexagon": "Hexagon",
     "crop": {
       "avatarHeading": "Profilbild",
       "backgroundHeading": "Hintergrundbild",
@@ -119,6 +126,22 @@
   },
   "settings": {
     "heading": "Einstellungen",
+    "privacyHeading": "Datenschutz",
+    "privacyHint": "Bestimmt, wer dein Profil sehen kann.",
+    "visibility": {
+      "public": {
+        "label": "Öffentlich",
+        "description": "Wird im Zufalls-Slider auf der Startseite gezeigt und ist für alle mit dem Link erreichbar."
+      },
+      "unlisted": {
+        "label": "Nicht gelistet",
+        "description": "Wird nie auf der Startseite gezeigt, ist aber weiterhin über den direkten Link erreichbar."
+      },
+      "hidden": {
+        "label": "Nicht anzeigen",
+        "description": "Für niemanden außer dir erreichbar – praktisch, solange du noch nicht fertig bist."
+      }
+    },
     "dangerZoneHeading": "Gefahrenzone",
     "deleteWarning": "Dies löscht dein Profil und alle zugehörigen Daten dauerhaft. Das kann nicht rückgängig gemacht werden.",
     "deleteProfile": "Profil löschen",

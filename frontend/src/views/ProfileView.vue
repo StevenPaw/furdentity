@@ -11,12 +11,14 @@ import FlagPickerModal from '../components/FlagPickerModal.vue'
 import FlagBadge from '../components/FlagBadge.vue'
 import DesignPickerModal from '../components/DesignPickerModal.vue'
 import designIcon from '../assets/icons/design.svg'
+import { avatarShapeStyle, DEFAULT_AVATAR_SHAPE } from '../utils/avatarShapes'
 
 const route = useRoute()
 const { t } = useI18n()
 
 const profile = ref(null)
 const notFound = ref(false)
+const isPrivate = ref(false)
 const ownHandle = ref(null)
 
 const editMode = ref(false)
@@ -42,6 +44,7 @@ watchEffect(async () => {
   const handle = route.params.handle
   profile.value = null
   notFound.value = false
+  isPrivate.value = false
   editMode.value = false
   activeField.value = null
   linkModalTarget.value = null
@@ -50,22 +53,40 @@ watchEffect(async () => {
   flagPickerSide.value = null
   designModalOpen.value = false
 
-  try {
-    profile.value = await api.profileByHandle(handle)
-  } catch {
-    notFound.value = true
-    return
-  }
-
+  // Resolved first (rather than after the profile fetch) because a hidden
+  // profile needs to know right away whether the visitor *is* its owner –
+  // that's the one case allowed to see it anyway (see below).
   if (isAuthenticated()) {
     try {
-      const me = await api.me()
-      ownHandle.value = me.handle
+      ownHandle.value = (await api.me()).handle
     } catch {
       ownHandle.value = null
     }
   } else {
     ownHandle.value = null
+  }
+
+  if (ownHandle.value === handle) {
+    // toOwnApiData() is a superset of the public shape (adds email, which
+    // this view never renders), so it's safe to use directly here too –
+    // and it's the only way for the owner to see their own
+    // User::VISIBILITY_HIDDEN profile at all.
+    try {
+      profile.value = await api.me()
+    } catch {
+      notFound.value = true
+    }
+    return
+  }
+
+  try {
+    profile.value = await api.profileByHandle(handle)
+  } catch (e) {
+    if (e.status === 403) {
+      isPrivate.value = true
+    } else {
+      notFound.value = true
+    }
   }
 })
 
@@ -143,10 +164,15 @@ async function onLinkDrop(targetIndex) {
     :style="{
       '--card-maincolor': profile?.mainColor || '#6c5ce7',
       '--card-secondarycolor': profile?.secondaryColor || profile?.mainColor || '#6c5ce7',
+      '--card-avatar-radius': avatarShapeStyle(profile?.avatarShape || DEFAULT_AVATAR_SHAPE).borderRadius,
+      '--card-avatar-clip-path': avatarShapeStyle(profile?.avatarShape || DEFAULT_AVATAR_SHAPE).clipPath,
     }"
   >
     <template v-if="notFound">
       <p>{{ t('profile.notFound') }}</p>
+    </template>
+    <template v-else-if="isPrivate">
+      <p>{{ t('profile.private') }}</p>
     </template>
     <template v-else-if="profile">
       <p v-if="isOwner" class="edit-bar">
@@ -397,6 +423,7 @@ async function onLinkDrop(targetIndex) {
       <ImageCropModal
         v-if="imageCropTarget"
         :type="imageCropTarget"
+        :avatar-shape="profile.avatarShape || 'circle'"
         @close="imageCropTarget = null"
         @saved="onImageSaved"
       />
@@ -413,6 +440,7 @@ async function onLinkDrop(targetIndex) {
         v-if="designModalOpen"
         :main-color="profile.mainColor"
         :secondary-color="profile.secondaryColor"
+        :avatar-shape="profile.avatarShape"
         @close="designModalOpen = false"
         @saved="onDesignSaved"
       />

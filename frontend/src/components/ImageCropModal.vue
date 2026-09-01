@@ -2,11 +2,27 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
+import {
+  AVATAR_SHAPES,
+  AVATAR_SHAPE_LABEL_KEYS,
+  avatarShapeMaskImage,
+  avatarShapeStyle,
+  DEFAULT_AVATAR_SHAPE,
+} from '../utils/avatarShapes'
 
 const props = defineProps({
   type: { type: String, required: true }, // 'avatar' | 'background'
+  // The profile's currently saved shape. For the avatar crop itself this is
+  // just the starting point for the picker below (the user can change it
+  // before saving); for the background crop it's only used to preview where
+  // the (unrelated, already-set) avatar sits.
+  avatarShape: { type: String, default: DEFAULT_AVATAR_SHAPE },
 })
 const emit = defineEmits(['close', 'saved'])
+
+// Only meaningful for type === 'avatar' - lets the shape be picked directly
+// in this modal instead of requiring a separate trip to the design modal.
+const shape = ref(props.avatarShape || DEFAULT_AVATAR_SHAPE)
 
 const { t } = useI18n()
 
@@ -54,12 +70,20 @@ const displayHeight = computed(() => naturalHeight.value * effectiveScale.value)
 // against the *container's* height/width respectively – not both against
 // width like cqw does – so this needs actual pixel math rather than plain
 // CSS percentages.
+// The avatar crop's own overlay reflects the shape being picked live; the
+// background crop's avatar-position preview reflects the already-saved shape
+// (there's no picker on that screen).
+const overlayShapeStyle = computed(() => avatarShapeStyle(props.type === 'avatar' ? shape.value : props.avatarShape))
+// The vignette overlay (avatar crop only) is masked rather than shaped via
+// border-radius/box-shadow - see avatarShapeMaskImage()'s doc comment.
+const avatarVignetteMaskImage = computed(() => avatarShapeMaskImage(shape.value))
 const avatarOverlayStyle = computed(() => {
   const size = stageWidth.value * AVATAR_SIZE_FRACTION
   return {
     width: size + 'px',
     height: size + 'px',
     top: stageWidth.value * AVATAR_TOP_FRACTION + 'px',
+    ...overlayShapeStyle.value,
   }
 })
 
@@ -167,9 +191,20 @@ async function save() {
     const ctx = canvas.getContext('2d')
     ctx.drawImage(image.value, sourceX, sourceY, sourceW, sourceH, 0, 0, canvas.width, canvas.height)
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
-    const updated =
+    // Avatar keeps a lossless PNG round-trip to the server (which also
+    // derives a JPEG from it – see ProfileImageStore); the background strip
+    // stays JPEG only.
+    const dataUrl =
+      props.type === 'avatar' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.9)
+    let updated =
       props.type === 'avatar' ? await api.uploadAvatar(dataUrl) : await api.uploadBackground(dataUrl)
+
+    // Shape is a separate field from the image itself, so it needs its own
+    // PATCH - only sent when actually changed, to avoid a pointless write.
+    if (props.type === 'avatar' && shape.value !== (props.avatarShape || DEFAULT_AVATAR_SHAPE)) {
+      updated = await api.updateMe({ avatarShape: shape.value })
+    }
+
     emit('saved', updated)
   } catch (e) {
     error.value = e.message
@@ -226,7 +261,12 @@ onBeforeUnmount(() => {
             }"
             @load="onImageLoad"
           />
-          <div v-if="type === 'avatar'" class="crop-circle-overlay" aria-hidden="true"></div>
+          <div
+            v-if="type === 'avatar'"
+            class="crop-circle-overlay"
+            :style="{ maskImage: avatarVignetteMaskImage, WebkitMaskImage: avatarVignetteMaskImage }"
+            aria-hidden="true"
+          ></div>
           <div
             v-else-if="type === 'background'"
             class="crop-avatar-preview"
@@ -248,6 +288,29 @@ onBeforeUnmount(() => {
         <button type="button" class="crop-pick-btn crop-pick-btn--secondary" @click="pickFile">
           {{ t('profile.crop.chooseDifferentImage') }}
         </button>
+
+        <template v-if="type === 'avatar'">
+          <p class="design-field-label">{{ t('profile.designAvatarShape') }}</p>
+          <div class="shape-picker" role="radiogroup" :aria-label="t('profile.designAvatarShape')">
+            <button
+              v-for="option in AVATAR_SHAPES"
+              :key="option.key"
+              type="button"
+              class="shape-option"
+              :class="{ 'shape-option--active': shape === option.key }"
+              role="radio"
+              :aria-checked="shape === option.key"
+              :aria-label="t(AVATAR_SHAPE_LABEL_KEYS[option.key])"
+              :title="t(AVATAR_SHAPE_LABEL_KEYS[option.key])"
+              @click="shape = option.key"
+            >
+              <span
+                class="shape-option-swatch"
+                :style="{ borderRadius: option.borderRadius, clipPath: option.clipPath }"
+              ></span>
+            </button>
+          </div>
+        </template>
       </template>
 
       <p v-if="error" class="modal-error">{{ error }}</p>

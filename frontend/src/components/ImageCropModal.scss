@@ -100,16 +100,21 @@
   pointer-events: none;
 }
 
-// A circular "hole" cut into an otherwise-opaque overlay via a huge
-// box-shadow spread – shows exactly the circular crop the card face itself
-// applies (see .card-avatar's border-radius: 50% in ProfileCard.scss), so
-// what's outside the circle but still inside the square stage is clearly
-// marked as "won't actually be visible".
+// A shape-sized "hole" cut into an otherwise-opaque overlay via mask-image
+// (see avatarShapeMaskImage() in utils/avatarShapes.js) – shows exactly the
+// crop the card face itself applies (see .card-avatar in ProfileCard.scss),
+// so what's outside the shape but still inside the square stage is clearly
+// marked as "won't actually be visible". mask-image rather than the older
+// border-radius + box-shadow-spread trick, since that trick can't produce a
+// hexagon (box-shadow is clipped away wherever clip-path would be needed).
 .crop-circle-overlay {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.55);
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
   pointer-events: none;
 }
 
@@ -132,4 +137,42 @@
   display: block;
   width: 100%;
   margin-top: 0.75rem;
+}
+
+// Mirrors DesignPickerModal.scss's .shape-picker/.shape-option so the same
+// control looks identical whether it's reached from the design modal or
+// (here) inline while uploading a new avatar.
+.design-field-label {
+  margin: 0.75rem 0 0.5rem;
+  font-weight: 600;
+}
+
+.shape-picker {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.shape-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #8888;
+  background: none;
+  cursor: pointer;
+
+  &--active {
+    border-color: canvastext;
+    background: color-mix(in srgb, canvastext 10%, transparent);
+  }
+}
+
+.shape-option-swatch {
+  width: 26px;
+  height: 26px;
+  background: currentColor;
+  opacity: 0.85;
 }

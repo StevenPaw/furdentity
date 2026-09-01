@@ -12,6 +12,7 @@ use SilverStripe\Forms\GridField\GridFieldAddNewButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\LiteralField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\Security;
 
@@ -30,6 +31,8 @@ use SilverStripe\Security\Security;
  * @property string $Species
  * @property string $CardMainColor
  * @property string $CardSecondaryColor
+ * @property string $AvatarShape
+ * @property string $Visibility
  */
 class User extends DataObject
 {
@@ -53,6 +56,37 @@ class User extends DataObject
     // is the only producer of these values.
     public const int CARD_COLOR_MAX_LENGTH = 9;
 
+    // The only valid AvatarShape values – anything else sent by a client is
+    // rejected outright rather than merely length-capped (unlike the opaque
+    // flag/color strings above), since this drives a fixed set of CSS rules
+    // on both the profile card and the crop overlay.
+    public const string AVATAR_SHAPE_CIRCLE = 'circle';
+    public const string AVATAR_SHAPE_ROUNDED_SQUARE = 'rounded-square';
+    public const string AVATAR_SHAPE_SQUARE = 'square';
+    public const string AVATAR_SHAPE_HEXAGON = 'hexagon';
+    public const array AVATAR_SHAPES = [
+        self::AVATAR_SHAPE_CIRCLE,
+        self::AVATAR_SHAPE_ROUNDED_SQUARE,
+        self::AVATAR_SHAPE_SQUARE,
+        self::AVATAR_SHAPE_HEXAGON,
+    ];
+
+    // "public" – shown on the card face, the public profile endpoint, AND
+    // eligible for the homepage's random-profiles carousel.
+    // "unlisted" – same as public except never picked for that carousel;
+    // still fully viewable by anyone with the direct /id/{handle} link.
+    // "hidden" – the public profile endpoint refuses it outright (see
+    // PublicApiController::profile()); only the owner, viewing their own
+    // profile while authenticated, ever sees it.
+    public const string VISIBILITY_PUBLIC = 'public';
+    public const string VISIBILITY_UNLISTED = 'unlisted';
+    public const string VISIBILITY_HIDDEN = 'hidden';
+    public const array VISIBILITIES = [
+        self::VISIBILITY_PUBLIC,
+        self::VISIBILITY_UNLISTED,
+        self::VISIBILITY_HIDDEN,
+    ];
+
     private static array $db = [
         'Email' => 'Varchar(255)',
         'Title' => 'Varchar(255)',
@@ -63,16 +97,24 @@ class User extends DataObject
         'FlagRight' => 'Varchar(32)',
         'CardMainColor' => 'Varchar(9)',
         'CardSecondaryColor' => 'Varchar(9)',
+        'AvatarShape' => 'Varchar(20)',
+        'Visibility' => 'Varchar(20)',
     ];
 
     private static array $has_one = [
         'AvatarImage' => Image::class,
         'BackgroundImage' => Image::class,
+        // JPEG sibling of AvatarImage, written alongside it by
+        // ProfileImageStore::store() for a later API consumer that needs a
+        // JPEG rather than the PNG the profile itself renders. Background
+        // has no PNG variant, so it needs no JPEG sibling either.
+        'AvatarImageJpeg' => Image::class,
     ];
 
     private static array $owns = [
         'AvatarImage',
         'BackgroundImage',
+        'AvatarImageJpeg',
     ];
 
     private static array $has_many = [
@@ -92,6 +134,24 @@ class User extends DataObject
     ];
 
     private static string $default_sort = 'Email ASC';
+
+    /**
+     * Backfills Visibility for rows written before that column existed –
+     * without this, PublicApiController's `filter('Visibility', 'public')`
+     * queries would silently exclude every pre-existing user (toApiData()'s
+     * `?: self::VISIBILITY_PUBLIC` fallback only helps once a row has
+     * already been loaded, not for a WHERE clause matching against it).
+     */
+    #[Override]
+    public function requireDefaultRecords(): void
+    {
+        parent::requireDefaultRecords();
+
+        DB::prepared_query(
+            'UPDATE "AppUser" SET "Visibility" = ? WHERE "Visibility" IS NULL OR "Visibility" = \'\'',
+            [self::VISIBILITY_PUBLIC]
+        );
+    }
 
     #[Override]
     public function getCMSFields(): FieldList
@@ -152,9 +212,12 @@ class User extends DataObject
 
     /**
      * Shape returned by the profile-facing APIs (public + internal listing).
-     * Deliberately excludes Email. Every user's profile is public.
+     * Deliberately excludes Email. Callers are responsible for their own
+     * visibility gate before handing this out – see
+     * {@see \App\Api\PublicApiController::profile()}, which refuses to call
+     * this at all for a {@see self::VISIBILITY_HIDDEN} profile.
      *
-     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, flagLeft: ?string, flagRight: ?string, mainColor: ?string, secondaryColor: ?string, links: array}
+     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, flagLeft: ?string, flagRight: ?string, mainColor: ?string, secondaryColor: ?string, avatarShape: string, visibility: string, links: array}
      */
     public function toApiData(): array
     {
@@ -170,6 +233,8 @@ class User extends DataObject
             'flagRight' => (string) $this->FlagRight ?: null,
             'mainColor' => (string) $this->CardMainColor ?: null,
             'secondaryColor' => (string) $this->CardSecondaryColor ?: null,
+            'avatarShape' => (string) $this->AvatarShape ?: self::AVATAR_SHAPE_CIRCLE,
+            'visibility' => (string) $this->Visibility ?: self::VISIBILITY_PUBLIC,
             'links' => array_map(
                 static fn (ProfileLink $link): array => $link->toApiData(),
                 iterator_to_array($this->ProfileLinks())
@@ -192,6 +257,16 @@ class User extends DataObject
     public function backgroundUrl(): ?string
     {
         return self::cacheBustedUrl($this->BackgroundImage());
+    }
+
+    /**
+     * Not currently surfaced via toApiData()/toOwnApiData() – kept for a
+     * future API consumer that needs a JPEG rather than the PNG the profile
+     * itself renders.
+     */
+    public function avatarJpegUrl(): ?string
+    {
+        return self::cacheBustedUrl($this->AvatarImageJpeg());
     }
 
     /**

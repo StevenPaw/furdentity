@@ -27,11 +27,15 @@ use Throwable;
  *
  *   GET    /api/v1/internal/me
  *   PATCH  /api/v1/internal/me    { "title"?: "...", "bio"?: "...", "species"?: "...",
- *                                   "mainColor"?: "#rrggbb", "secondaryColor"?: "#rrggbb" } –
+ *                                   "mainColor"?: "#rrggbb", "secondaryColor"?: "#rrggbb",
+ *                                   "avatarShape"?: "circle"|"rounded-square"|"square"|"hexagon",
+ *                                   "visibility"?: "public"|"unlisted"|"hidden" } –
  *                                 Handle is deliberately not editable here; once set at
  *                                 registration only a CMS admin can change it. An empty
  *                                 "secondaryColor" clears it, switching the card to solid-color
- *                                 mode instead of a gradient.
+ *                                 mode instead of a gradient. "visibility" gates the public
+ *                                 profile endpoint (see {@see PublicApiController::profile()})
+ *                                 and the homepage's random-profiles carousel.
  *   DELETE /api/v1/internal/me    { "handle": "..." } – must match exactly, deletes the account
  *   POST   /api/v1/internal/me/avatar      { "image": "data:image/jpeg;base64,..." } – replaces
  *                                          the avatar shown on the profile card; already cropped
@@ -200,6 +204,14 @@ class InternalApiController extends ApiController
             $user->CardSecondaryColor = $this->validatedColor($body['secondaryColor']);
         }
 
+        if (array_key_exists('avatarShape', $body)) {
+            $user->AvatarShape = $this->validatedAvatarShape($body['avatarShape']);
+        }
+
+        if (array_key_exists('visibility', $body)) {
+            $user->Visibility = $this->validatedVisibility($body['visibility']);
+        }
+
         $user->write();
 
         return $this->jsonResponse($user->toOwnApiData());
@@ -225,6 +237,28 @@ class InternalApiController extends ApiController
         }
 
         return $color;
+    }
+
+    private function validatedAvatarShape(mixed $value): string
+    {
+        $shape = trim((string) $value);
+
+        if (!in_array($shape, User::AVATAR_SHAPES, true)) {
+            $this->error('avatarShape must be one of: ' . implode(', ', User::AVATAR_SHAPES), 422);
+        }
+
+        return $shape;
+    }
+
+    private function validatedVisibility(mixed $value): string
+    {
+        $visibility = trim((string) $value);
+
+        if (!in_array($visibility, User::VISIBILITIES, true)) {
+            $this->error('visibility must be one of: ' . implode(', ', User::VISIBILITIES), 422);
+        }
+
+        return $visibility;
     }
 
     /**

@@ -1,0 +1,120 @@
+.profile-carousel {
+  padding: 2rem 0 3rem;
+
+  h2 {
+    margin: 0 0 1.25rem;
+    text-align: center;
+  }
+}
+
+// Masks the strip to the viewport width – the strip itself is wider than
+// this (it holds every card, possibly doubled for the loop).
+.carousel-track {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+
+  &--loop {
+    // Room for the mask's fade to not clip real cards.
+    padding: 0 1.5rem;
+  }
+}
+
+.carousel-strip {
+  display: flex;
+  gap: 1.25rem;
+  width: max-content;
+  padding: 0 1.25rem;
+
+  &--loop {
+    animation-name: carousel-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+
+    &:hover {
+      animation-play-state: paused;
+    }
+  }
+}
+
+// Scrolls exactly one (unduplicated) copy's width – loopProfiles duplicates
+// the list so this lands back on an identical visual frame.
+@keyframes carousel-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.mini-card {
+  position: relative;
+  flex: none;
+  width: 150px;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-4px);
+  }
+}
+
+.mini-card-background {
+  position: absolute;
+  inset: 0;
+  background-color: var(--mini-card-maincolor);
+  background-size: cover;
+  background-position: center;
+
+  // Same gradient body treatment as the real card's .card-body, so a mini
+  // card reads as a small version of it rather than a different design.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 40%,
+      color-mix(in srgb, var(--mini-card-secondarycolor) 70%, black 30%) 100%
+    );
+  }
+}
+
+.mini-card-avatar {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  width: 34%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--mini-card-avatar-radius, 50%);
+  clip-path: var(--mini-card-avatar-clip-path, none);
+  background-color: var(--mini-card-maincolor);
+  background-size: cover;
+  background-position: center;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.mini-card-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.6rem;
+  margin: 0;
+  padding: 0 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
