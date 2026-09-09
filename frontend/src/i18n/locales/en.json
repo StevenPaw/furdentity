@@ -8,13 +8,15 @@
     "language": "Language",
     "register": "Create profile",
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "premium": "Premium"
   },
   "footer": {
     "legal": "Legal",
     "impressum": "Legal notice",
     "privacy": "Privacy policy",
-    "about": "About us"
+    "about": "About us",
+    "agb": "Terms & Conditions"
   },
   "landing": {
     "heroTitle": "One identity for every furry corner of the internet",
@@ -156,5 +158,29 @@
   "notFound": {
     "heading": "Page not found",
     "backHome": "Back to the start page"
+  },
+  "premium": {
+    "heading": "Premium",
+    "infoHeading": "Support the project",
+    "infoText": "Furdentity is built by a single person in their spare time. A premium membership supports further development – dedicated premium features will follow once they exist.",
+    "loginToBuy": "Log in to buy premium.",
+    "becomeMonthly": "Monthly – €1.00",
+    "becomeYearly": "Yearly – €10.00",
+    "activeUntil": "Premium is active until {date}.",
+    "cancelledUntil": "Premium was cancelled and stays active until {date}.",
+    "cancelButton": "Cancel premium",
+    "switchTo": {
+      "monthly": "Switch to monthly",
+      "yearly": "Switch to yearly"
+    },
+    "interval": {
+      "monthly": "monthly",
+      "yearly": "yearly"
+    },
+    "pendingSwitchHint": "Switches to {interval} on {date}.",
+    "pendingHint": "Payment is being processed, this can take a moment.",
+    "reactivateButton": "Reactivate premium",
+    "withdrawalWaiverLabel": "I want the premium membership to start immediately, and understand that this ends my 14-day withdrawal right early, or that I owe a proportional amount if I withdraw before it's ended. Details:",
+    "withdrawalWaiverLink": "Withdrawal terms in the Terms & Conditions"
   }
 }

@@ -94,6 +94,15 @@ export const api = {
     syncAuthState()
     return result
   },
+  startPremiumCheckout: (interval, withdrawalWaiverAccepted) =>
+    request('/internal/premium/checkout', {
+      method: 'POST',
+      body: { interval, withdrawalWaiverAccepted },
+    }),
+  cancelPremium: () => request('/internal/premium/cancel', { method: 'POST' }),
+  changePremiumInterval: (interval) =>
+    request('/internal/premium/interval', { method: 'POST', body: { interval } }),
+  reactivatePremium: () => request('/internal/premium/reactivate', { method: 'POST' }),
 }
 
 // Keeps `authenticated` in sync with another tab logging in/out – cookies

@@ -11,3 +11,13 @@ App\Api\Support\JwtService:
 App\Api\AuthController:
   # How long an emailed login link stays valid, in seconds (15 minutes)
   login_code_ttl: 900
+App\Api\Support\MollieService:
+  # Premium subscription prices, in cents (not floats, to avoid rounding
+  # drift) – change these to change the price, no code deploy needed.
+  prices:
+    monthly: 100
+    yearly: 1000
+  # Mollie's own interval format (see their subscriptions API docs).
+  intervals:
+    monthly: '1 month'
+    yearly: '12 months'

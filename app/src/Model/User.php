@@ -87,6 +87,23 @@ class User extends DataObject
         self::VISIBILITY_HIDDEN,
     ];
 
+    // Mirrors the Mollie subscription's own lifecycle rather than inventing a
+    // separate one: "active" while payments keep succeeding, "past_due"
+    // after a failed recurring charge (access is NOT revoked immediately –
+    // see isPremium()), "canceled" once the user cancels (also still
+    // premium until PremiumRenewsAt, i.e. the already-paid-for period runs
+    // out). "" is the default/never-subscribed state.
+    public const string PREMIUM_STATUS_ACTIVE = 'active';
+    public const string PREMIUM_STATUS_PAST_DUE = 'past_due';
+    public const string PREMIUM_STATUS_CANCELED = 'canceled';
+
+    public const string PREMIUM_INTERVAL_MONTHLY = 'monthly';
+    public const string PREMIUM_INTERVAL_YEARLY = 'yearly';
+    public const array PREMIUM_INTERVALS = [
+        self::PREMIUM_INTERVAL_MONTHLY,
+        self::PREMIUM_INTERVAL_YEARLY,
+    ];
+
     private static array $db = [
         'Email' => 'Varchar(255)',
         'Title' => 'Varchar(255)',
@@ -99,6 +116,19 @@ class User extends DataObject
         'CardSecondaryColor' => 'Varchar(9)',
         'AvatarShape' => 'Varchar(20)',
         'Visibility' => 'Varchar(20)',
+        'MollieCustomerId' => 'Varchar(64)',
+        'MollieSubscriptionId' => 'Varchar(64)',
+        'PremiumStatus' => 'Varchar(20)',
+        'PremiumInterval' => 'Varchar(20)',
+        // Set while an interval switch is waiting for the next Mollie
+        // renewal to take effect (see MollieWebhookController) – null the
+        // rest of the time.
+        'PremiumPendingInterval' => 'Varchar(20)',
+        // The date the current (or, once canceled, final) paid-for period
+        // runs out. isPremium() is entirely driven by this plus
+        // PremiumStatus, so there's no separate scheduled job needed to
+        // "turn off" premium once it lapses.
+        'PremiumRenewsAt' => 'Datetime',
     ];
 
     private static array $has_one = [
@@ -291,7 +321,32 @@ class User extends DataObject
      */
     public function toOwnApiData(): array
     {
-        return [...$this->toApiData(), 'email' => (string) $this->Email];
+        return [
+            ...$this->toApiData(),
+            'email' => (string) $this->Email,
+            'premium' => $this->isPremium(),
+            'premiumStatus' => (string) $this->PremiumStatus ?: null,
+            'premiumInterval' => (string) $this->PremiumInterval ?: null,
+            'premiumPendingInterval' => (string) $this->PremiumPendingInterval ?: null,
+            'premiumRenewsAt' => (string) $this->PremiumRenewsAt ?: null,
+        ];
+    }
+
+    /**
+     * True while the user's most recently paid-for period hasn't run out
+     * yet – covers both a currently-active subscription and one that's
+     * been canceled but is still within its already-paid-for period (see
+     * the class doc comment on the PREMIUM_STATUS_* constants). Deliberately
+     * NOT included in toApiData() – premium is only ever shown to the user
+     * themselves, never on the public profile.
+     */
+    public function isPremium(): bool
+    {
+        if (!in_array($this->PremiumStatus, [self::PREMIUM_STATUS_ACTIVE, self::PREMIUM_STATUS_CANCELED], true)) {
+            return false;
+        }
+
+        return (string) $this->PremiumRenewsAt !== '' && strtotime((string) $this->PremiumRenewsAt) >= time();
     }
 
     #[Override]

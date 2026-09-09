@@ -7,32 +7,26 @@ const { t } = useI18n()
 <template>
   <div class="container legal">
     <h2>{{ t('footer.impressum') }}</h2>
-    <p class="hint">
-      Rechtlich verbindliche Angaben – dieser Text ist bislang nur ein Platzhalter und muss vor
-      Live-Betrieb der Seite durch die tatsächlichen Angaben ersetzt werden.
-    </p>
 
     <h3>Angaben gemäß § 5 TMG</h3>
     <p>
-      [PLATZHALTER: Name/Firma]<br />
-      [PLATZHALTER: Straße und Hausnummer]<br />
-      [PLATZHALTER: PLZ und Ort]<br />
-      [PLATZHALTER: Land]
+      Steffen Kahl<br />
+      Ohlendamm 2<br />
+      22926 Ahrensburg<br />
+      Deutschland
     </p>
 
     <h3>Kontakt</h3>
     <p>
-      Telefon: [PLATZHALTER: Telefonnummer]<br />
-      E-Mail: [PLATZHALTER: E-Mail-Adresse]
+      E-Mail: mail@furdentity.com
     </p>
-
-    <h3>Umsatzsteuer-ID</h3>
-    <p>[PLATZHALTER: Umsatzsteuer-Identifikationsnummer gemäß § 27 a UStG, falls vorhanden]</p>
 
     <h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h3>
     <p>
-      [PLATZHALTER: Name]<br />
-      [PLATZHALTER: Anschrift wie oben]
+      Steffen Kahl<br />
+      Ohlendamm 2<br />
+      22926 Ahrensburg<br />
+      Deutschland
     </p>
 
     <h3>Streitschlichtung</h3>

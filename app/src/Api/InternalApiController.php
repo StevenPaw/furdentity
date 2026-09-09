@@ -4,6 +4,8 @@ namespace App\Api;
 
 use Override;
 use App\Api\Support\JwtService;
+use App\Api\Support\MollieService;
+use App\Api\Support\PremiumMailer;
 use App\Api\Support\ProfileImageException;
 use App\Api\Support\ProfileImageStore;
 use App\Model\ProfileLink;
@@ -55,6 +57,21 @@ use Throwable;
  *   PATCH  /api/v1/internal/links/$ID       { "url"?: "...", "title"?: "...", "platform"?: "..." }
  *   DELETE /api/v1/internal/links/$ID
  *   POST   /api/v1/internal/links/reorder   { "order": [linkId, linkId, ...] }
+ *   POST   /api/v1/internal/premium/checkout { "interval": "monthly"|"yearly" } – starts a new
+ *                                          premium subscription; returns { "checkoutUrl": "..." }
+ *                                          to redirect the browser to (see
+ *                                          {@see \App\Api\Support\MollieService}). The
+ *                                          subscription itself is only created once Mollie's
+ *                                          webhook confirms the first payment – see
+ *                                          {@see \App\Api\MollieWebhookController}.
+ *   POST   /api/v1/internal/premium/cancel  Cancels the Mollie subscription. Premium access
+ *                                          remains until the already-paid-for period runs out
+ *                                          (see {@see \App\Model\User::isPremium()}), it isn't
+ *                                          revoked immediately.
+ *   POST   /api/v1/internal/premium/interval { "interval": "monthly"|"yearly" } – switches the
+ *                                          existing subscription to the other interval. Takes
+ *                                          effect starting with the next scheduled payment, not
+ *                                          immediately (see MollieService::updateSubscriptionInterval()).
  */
 class InternalApiController extends ApiController
 {
@@ -69,6 +86,10 @@ class InternalApiController extends ApiController
         'links/reorder' => 'reorderLinks',
         'links/$ID!' => 'linkItem',
         'links' => 'links',
+        'premium/checkout' => 'premiumCheckout',
+        'premium/cancel' => 'premiumCancel',
+        'premium/interval' => 'premiumInterval',
+        'premium/reactivate' => 'premiumReactivate',
     ];
 
     private static array $allowed_actions = [
@@ -82,6 +103,10 @@ class InternalApiController extends ApiController
         'links',
         'linkItem',
         'reorderLinks',
+        'premiumCheckout',
+        'premiumCancel',
+        'premiumInterval',
+        'premiumReactivate',
     ];
 
     private ?User $authenticatedUser = null;
@@ -263,9 +288,9 @@ class InternalApiController extends ApiController
 
     /**
      * Permanently deletes the authenticated user's account, including their
-     * sessions and profile links. Requires the exact handle in the request
-     * body as a confirmation, mirroring the "type your handle to confirm"
-     * check the frontend already does before this is ever called.
+     * sessions, profile links, and uploaded images. Requires the exact handle
+     * in the request body as a confirmation, mirroring the "type your handle
+     * to confirm" check the frontend already does before this is ever called.
      */
     private function deleteCurrentUser(): HTTPResponse
     {
@@ -282,6 +307,13 @@ class InternalApiController extends ApiController
 
         foreach ($user->Sessions() as $session) {
             $session->delete();
+        }
+
+        foreach (['AvatarImage', 'BackgroundImage', 'AvatarImageJpeg'] as $relation) {
+            $image = $user->$relation();
+            if ($image && $image->exists()) {
+                $image->delete();
+            }
         }
 
         $user->delete();
@@ -559,5 +591,145 @@ class InternalApiController extends ApiController
         }
 
         return $data;
+    }
+
+    /**
+     * withdrawalWaiverAccepted is required, not just a frontend nicety: per
+     * § 356 Abs. 4 BGB, a consumer keeps a 14-day withdrawal right on a
+     * service contract unless they expressly requested that performance
+     * begin immediately, acknowledging that this ends (or reduces) that
+     * right – so this consent has to be captured before the payment is
+     * even created, and is included in the payment's metadata (see
+     * MollieService::createFirstPayment()) as the audit trail for it.
+     */
+    public function premiumCheckout(): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $body = $this->jsonBody();
+        $interval = $this->validatedPremiumInterval($body['interval'] ?? null);
+
+        if (($body['withdrawalWaiverAccepted'] ?? false) !== true) {
+            $this->error('withdrawalWaiverAccepted must be true', 422);
+        }
+
+        $payment = MollieService::create()->createFirstPayment($this->authenticatedUser, $interval);
+
+        return $this->jsonResponse(['checkoutUrl' => $payment->getCheckoutUrl()]);
+    }
+
+    /**
+     * Cancels the Mollie subscription but leaves PremiumStatus/PremiumRenewsAt
+     * otherwise untouched – the already-paid-for period keeps counting as
+     * premium via {@see User::isPremium()} until it actually runs out.
+     */
+    public function premiumCancel(): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $user = $this->authenticatedUser;
+
+        // past_due is included – a failed recurring charge doesn't cancel
+        // the Mollie subscription itself, only "canceled" does that.
+        $cancelableStatuses = [User::PREMIUM_STATUS_ACTIVE, User::PREMIUM_STATUS_PAST_DUE];
+
+        if (!in_array($user->PremiumStatus, $cancelableStatuses, true) || (string) $user->MollieSubscriptionId === '') {
+            $this->error('No active premium subscription', 422);
+        }
+
+        MollieService::create()->cancelSubscription($user);
+
+        $user->PremiumStatus = User::PREMIUM_STATUS_CANCELED;
+        $user->write();
+
+        PremiumMailer::create()->sendCancelled($user, (string) $user->PremiumRenewsAt);
+
+        return $this->jsonResponse($user->toOwnApiData());
+    }
+
+    /**
+     * Switches interval on the existing subscription. Doesn't touch
+     * PremiumInterval directly – it's only finalized once the next
+     * recurring payment confirms the new amount (see
+     * {@see \App\Api\MollieWebhookController}), so PremiumPendingInterval
+     * is what the frontend shows as "switches to X on {renewsAt}" in the
+     * meantime.
+     */
+    public function premiumInterval(): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $user = $this->authenticatedUser;
+        $newInterval = $this->validatedPremiumInterval($this->jsonBody()['interval'] ?? null);
+
+        // Excludes "canceled" deliberately – Mollie subscriptions can't be
+        // updated once canceled (see premiumReactivate() instead).
+        $switchableStatuses = [User::PREMIUM_STATUS_ACTIVE, User::PREMIUM_STATUS_PAST_DUE];
+
+        if (!in_array($user->PremiumStatus, $switchableStatuses, true) || (string) $user->MollieSubscriptionId === '') {
+            $this->error('No active premium subscription', 422);
+        }
+
+        if ($newInterval === $user->PremiumInterval) {
+            $this->error('Already on that interval', 422);
+        }
+
+        MollieService::create()->updateSubscriptionInterval($user, $newInterval);
+
+        $user->PremiumPendingInterval = $newInterval;
+        $user->write();
+
+        // PremiumRenewsAt is still the old interval's paid-through date at
+        // this point – exactly the date the new interval starts billing.
+        PremiumMailer::create()->sendIntervalChanged($user, $newInterval, (string) $user->PremiumRenewsAt);
+
+        return $this->jsonResponse($user->toOwnApiData());
+    }
+
+    /**
+     * Only meaningful while still within the grace period of a canceled
+     * subscription (see {@see User::isPremium()}) – a Mollie subscription
+     * can never be un-canceled, but the customer's mandate is still valid,
+     * so this creates a fresh subscription against it rather than sending
+     * the user through checkout again. See
+     * {@see \App\Api\Support\MollieService::reactivateSubscription()}.
+     */
+    public function premiumReactivate(): HTTPResponse
+    {
+        if (!$this->getRequest()->isPOST()) {
+            $this->error('Method not allowed', 405);
+        }
+
+        $user = $this->authenticatedUser;
+
+        if ($user->PremiumStatus !== User::PREMIUM_STATUS_CANCELED || !$user->isPremium()) {
+            $this->error('No canceled premium subscription within its grace period', 422);
+        }
+
+        $subscription = MollieService::create()->reactivateSubscription($user, (string) $user->PremiumRenewsAt);
+
+        $user->MollieSubscriptionId = $subscription->id;
+        $user->PremiumStatus = User::PREMIUM_STATUS_ACTIVE;
+        $user->PremiumPendingInterval = null;
+        $user->write();
+
+        return $this->jsonResponse($user->toOwnApiData());
+    }
+
+    private function validatedPremiumInterval(mixed $value): string
+    {
+        $interval = trim((string) $value);
+
+        if (!in_array($interval, User::PREMIUM_INTERVALS, true)) {
+            $this->error('interval must be one of: ' . implode(', ', User::PREMIUM_INTERVALS), 422);
+        }
+
+        return $interval;
     }
 }

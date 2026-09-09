@@ -6,8 +6,10 @@ import RegisterView from './views/RegisterView.vue'
 import ProfileView from './views/ProfileView.vue'
 import SettingsView from './views/SettingsView.vue'
 import AboutView from './views/AboutView.vue'
+import PremiumView from './views/PremiumView.vue'
 import ImpressumView from './views/legal/ImpressumView.vue'
 import DatenschutzView from './views/legal/DatenschutzView.vue'
+import AgbView from './views/legal/AgbView.vue'
 import NotFoundView from './views/NotFoundView.vue'
 import { api, isAuthenticated } from './api/client'
 
@@ -24,6 +26,9 @@ const router = createRouter({
       meta: { public: true },
     },
     { path: '/about', name: 'about', component: AboutView, meta: { public: true } },
+    // public: true – shows the info section either way; the status block
+    // inside PremiumView itself checks isAuthenticated() for the rest.
+    { path: '/premium', name: 'premium', component: PremiumView, meta: { public: true } },
     {
       path: '/legal/impressum',
       name: 'legal-impressum',
@@ -34,6 +39,12 @@ const router = createRouter({
       path: '/legal/datenschutz',
       name: 'legal-datenschutz',
       component: DatenschutzView,
+      meta: { public: true },
+    },
+    {
+      path: '/legal/agb',
+      name: 'legal-agb',
+      component: AgbView,
       meta: { public: true },
     },
     { path: '/id/:handle', name: 'profile', component: ProfileView, meta: { public: true } },

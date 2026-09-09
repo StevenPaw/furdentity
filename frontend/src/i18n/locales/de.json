@@ -8,13 +8,15 @@
     "language": "Sprache",
     "register": "Profil erstellen",
     "login": "Anmelden",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "premium": "Premium"
   },
   "footer": {
     "legal": "Legal",
     "impressum": "Impressum",
     "privacy": "Datenschutzerklärung",
-    "about": "About us"
+    "about": "About us",
+    "agb": "AGB"
   },
   "landing": {
     "heroTitle": "Eine Identität für jede furry Ecke des Internets",
@@ -156,5 +158,29 @@
   "notFound": {
     "heading": "Seite nicht gefunden",
     "backHome": "Zurück zur Startseite"
+  },
+  "premium": {
+    "heading": "Premium",
+    "infoHeading": "Unterstütze das Projekt",
+    "infoText": "Furdentity wird von einer einzelnen Person in der Freizeit entwickelt. Mit einer Premium-Mitgliedschaft unterstützt du die Weiterentwicklung – exklusive Premium-Funktionen folgen, sobald es sie gibt.",
+    "loginToBuy": "Melde dich an, um Premium zu kaufen.",
+    "becomeMonthly": "Monatlich – 1,00 €",
+    "becomeYearly": "Jährlich – 10,00 €",
+    "activeUntil": "Premium ist aktiv bis {date}.",
+    "cancelledUntil": "Premium wurde gekündigt und bleibt bis {date} aktiv.",
+    "cancelButton": "Premium kündigen",
+    "switchTo": {
+      "monthly": "Zu monatlich wechseln",
+      "yearly": "Zu jährlich wechseln"
+    },
+    "interval": {
+      "monthly": "monatlich",
+      "yearly": "jährlich"
+    },
+    "pendingSwitchHint": "Wechselt am {date} zu {interval}.",
+    "pendingHint": "Zahlung wird verarbeitet, das kann einen Moment dauern.",
+    "reactivateButton": "Premium reaktivieren",
+    "withdrawalWaiverLabel": "Ich möchte, dass die Premium-Mitgliedschaft sofort beginnt, und weiß, dass ich dadurch mein 14-tägiges Widerrufsrecht vorzeitig verliere bzw. im Widerrufsfall anteiligen Wertersatz schulde. Details:",
+    "withdrawalWaiverLink": "Widerrufsbelehrung in den AGB"
   }
 }

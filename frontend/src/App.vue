@@ -10,6 +10,7 @@ import languageIcon from './assets/icons/language.svg'
 import logoutIcon from './assets/icons/logout.svg'
 import loginIcon from './assets/icons/login.svg'
 import signupIcon from './assets/icons/signup.svg'
+import premiumIcon from './assets/icons/premium.svg'
 import LanguageModal from './components/LanguageModal.vue'
 
 const router = useRouter()
@@ -36,6 +37,11 @@ async function logout() {
       <span>{{ t('app.title') }}</span>
     </RouterLink>
     <nav>
+      <!-- Always visible, logged in or not – unlike the rest of the nav, which
+           branches on isAuthenticated() below. -->
+      <RouterLink to="/premium" class="icon-link" :aria-label="t('nav.premium')" :title="t('nav.premium')">
+        <img :src="premiumIcon" alt="" />
+      </RouterLink>
       <template v-if="isAuthenticated()">
         <RouterLink to="/app" class="icon-link" :aria-label="t('nav.myProfile')" :title="t('nav.myProfile')">
           <img :src="profileIcon" alt="" />
@@ -92,6 +98,7 @@ async function logout() {
         <span class="footer-heading">{{ t('footer.legal') }}</span>
         <RouterLink to="/legal/impressum">{{ t('footer.impressum') }}</RouterLink>
         <RouterLink to="/legal/datenschutz">{{ t('footer.privacy') }}</RouterLink>
+        <RouterLink to="/legal/agb">{{ t('footer.agb') }}</RouterLink>
       </div>
       <div class="footer-group">
         <RouterLink to="/about">{{ t('footer.about') }}</RouterLink>
