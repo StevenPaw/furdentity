@@ -50,7 +50,11 @@
     "submit": "Login-Link senden",
     "submitting": "…",
     "linkSent": "Schau in dein Postfach ({email}) für den Login-Link. Er ist 15 Minuten gültig.",
-    "noAccount": "Noch kein Konto?"
+    "noAccount": "Noch kein Konto?",
+    "codeIntro": "Auf einem anderen Gerät? Gib stattdessen den Code aus der E-Mail ein:",
+    "codeLabel": "Login-Code",
+    "codeSubmit": "Code bestätigen",
+    "codeSubmitting": "…"
   },
   "register": {
     "heading": "Profil erstellen",

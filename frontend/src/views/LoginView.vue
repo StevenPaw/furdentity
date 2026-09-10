@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
+import ManualCodeEntry from '../components/ManualCodeEntry.vue'
 
 const { t } = useI18n()
 
@@ -10,12 +11,14 @@ const email = ref('')
 const error = ref('')
 const busy = ref(false)
 const sent = ref(false)
+const sid = ref(null)
 
 async function submit() {
   busy.value = true
   error.value = ''
   try {
-    await api.requestLoginLink(email.value)
+    const result = await api.requestLoginLink(email.value)
+    sid.value = result.sid
     sent.value = true
   } catch (e) {
     error.value = e.message
@@ -31,6 +34,8 @@ async function submit() {
 
     <template v-if="sent">
       <p>{{ t('login.linkSent', { email }) }}</p>
+      <p>{{ t('login.codeIntro') }}</p>
+      <ManualCodeEntry :sid="sid" />
     </template>
     <template v-else>
       <p>{{ t('login.intro') }}</p>

@@ -31,6 +31,11 @@ class AuthController extends ApiController
 
     private static int $login_code_ttl = 900;
 
+    // Caps guesses against the 6-digit short code (1,000,000 combinations)
+    // within its 15-minute lifetime; the long link code is unaffected since
+    // brute-forcing 48 hex chars is already infeasible.
+    private static int $max_failed_attempts = 10;
+
     private static array $allowed_actions = [
         'requestLink',
         'confirm',
@@ -89,9 +94,18 @@ class AuthController extends ApiController
 
         $code = bin2hex(random_bytes(24));
 
+        // Short, human-typeable companion to the link code above – lets
+        // someone who opens the email on their phone type this into the
+        // device they're actually logging in on, instead of having to open
+        // the link there. Six digits keeps it easy to read/type while still
+        // giving 1,000,000 combinations against the same short TTL/attempt
+        // surface as the link code.
+        $shortCode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
         $session = UserSession::create();
         $session->UserID = $user->ID;
         $session->CodeHash = hash('sha256', $code);
+        $session->ShortCodeHash = hash('sha256', $shortCode);
         $session->CodeExpires = $this->inSeconds((int) $this->config()->get('login_code_ttl'));
         $session->UserAgent = substr((string) $this->getRequest()->getHeader('User-Agent'), 0, 512);
         $session->IPAddress = (string) $this->getRequest()->getIP();
@@ -99,10 +113,14 @@ class AuthController extends ApiController
         $session->PendingHandle = $handle;
         $session->write();
 
-        $this->sendLoginEmail($user, $session, $code);
+        $this->sendLoginEmail($user, $session, $code, $shortCode);
 
         return $this->jsonResponse([
             'message' => 'If that email address exists, a login link has been sent.',
+            // Safe to return: on its own it's just a row ID, useless without
+            // the code from the email – it's what lets this same browser tab
+            // confirm via the manually-typed short code instead of the link.
+            'sid' => $session->ID,
         ]);
     }
 
@@ -126,9 +144,23 @@ class AuthController extends ApiController
             !$session instanceof UserSession
             || $session->Confirmed
             || $session->RevokedAt
-            || !hash_equals($session->CodeHash, hash('sha256', $code))
+            || $session->FailedAttempts >= (int) $this->config()->get('max_failed_attempts')
             || strtotime((string) $session->CodeExpires) < time()
         ) {
+            $this->error('Invalid or expired login link', 401);
+        }
+
+        // Accepts either the long code from the emailed link or the short
+        // code from the same email, typed in by hand – see
+        // AuthController::requestLink() for why both exist. The short code
+        // is only 6 digits, so failed guesses count against a per-session
+        // limit above to keep it un-brute-forceable within the code's
+        // lifetime.
+        $codeHash = hash('sha256', $code);
+
+        if (!hash_equals($session->CodeHash, $codeHash) && !hash_equals($session->ShortCodeHash, $codeHash)) {
+            $session->FailedAttempts++;
+            $session->write();
             $this->error('Invalid or expired login link', 401);
         }
 
@@ -170,7 +202,7 @@ class AuthController extends ApiController
         $user->write();
     }
 
-    private function sendLoginEmail(User $user, UserSession $session, string $code): void
+    private function sendLoginEmail(User $user, UserSession $session, string $code, string $shortCode): void
     {
         $link = Director::absoluteURL('/login/confirm') . '?' . http_build_query([
             'sid' => $session->ID,
@@ -192,10 +224,17 @@ class AuthController extends ApiController
             ->setTo($user->Email)
             ->setSubject(_t(self::class . '.EMAIL_SUBJECT', 'Your Furdentity login link'))
             ->setBody(sprintf(
-                '<p>%s</p><p><a href="%s">%s</a></p><p>%s</p>',
+                '<p>%s</p><p><a href="%s">%s</a></p><p>%s</p><p>%s</p>',
                 _t(self::class . '.EMAIL_INTRO', 'Click the link below to log in:'),
                 htmlspecialchars($link, ENT_QUOTES),
                 _t(self::class . '.EMAIL_CTA', 'Log in to Furdentity'),
+                sprintf(
+                    _t(
+                        self::class . '.EMAIL_CODE',
+                        'On a different device? Enter this code instead: <strong>%s</strong>'
+                    ),
+                    htmlspecialchars($shortCode, ENT_QUOTES)
+                ),
                 _t(self::class . '.EMAIL_EXPIRY', 'This link expires in 15 minutes and can only be used once.')
             ))
             ->send();

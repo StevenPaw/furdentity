@@ -33,6 +33,8 @@ use SilverStripe\Security\Security;
  * CMS or a public API endpoint.
  *
  * @property string $CodeHash
+ * @property string $ShortCodeHash
+ * @property int $FailedAttempts
  * @property string $CodeExpires
  * @property bool $Confirmed
  * @property string $UserAgent
@@ -52,6 +54,8 @@ class UserSession extends DataObject
 
     private static array $db = [
         'CodeHash' => 'Varchar(64)',
+        'ShortCodeHash' => 'Varchar(64)',
+        'FailedAttempts' => 'Int',
         'CodeExpires' => 'Datetime',
         'Confirmed' => 'Boolean(0)',
         'UserAgent' => 'Varchar(512)',
@@ -104,6 +108,8 @@ class UserSession extends DataObject
 
         foreach ([
             'CodeHash',
+            'ShortCodeHash',
+            'FailedAttempts',
             'CodeExpires',
             'Confirmed',
             'UserAgent',

@@ -50,7 +50,11 @@
     "submit": "Send login link",
     "submitting": "…",
     "linkSent": "Check {email} for a login link. It expires in 15 minutes.",
-    "noAccount": "Don't have an account yet?"
+    "noAccount": "Don't have an account yet?",
+    "codeIntro": "On a different device? Enter the code from the email instead:",
+    "codeLabel": "Login code",
+    "codeSubmit": "Confirm code",
+    "codeSubmitting": "…"
   },
   "register": {
     "heading": "Create your profile",

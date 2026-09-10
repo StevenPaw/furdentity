@@ -56,6 +56,9 @@ export const api = {
   randomProfiles: (limit) => request(`/public/randomProfiles?limit=${encodeURIComponent(limit)}`),
   requestLoginLink: (email, title, handle) =>
     request('/auth/request-link', { method: 'POST', body: { email, title, handle } }),
+  // Same endpoint as the emailed link uses (see LoginConfirmView.vue) – it
+  // doesn't care whether `code` is the long link code or the short
+  // manually-typed one, both hash-match against the same session.
   confirmLogin: async (sid, code) => {
     const result = await request('/auth/confirm', { method: 'POST', body: { sid, code } })
     syncAuthState()

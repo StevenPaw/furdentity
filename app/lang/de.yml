@@ -15,6 +15,7 @@ de:
     EMAIL_SUBJECT: 'Dein Furdentity-Login-Link'
     EMAIL_INTRO: 'Klicke auf den folgenden Link, um dich anzumelden:'
     EMAIL_CTA: 'Bei Furdentity anmelden'
+    EMAIL_CODE: 'Auf einem anderen Gerät? Gib stattdessen diesen Code ein: <strong>%s</strong>'
     EMAIL_EXPIRY: 'Dieser Link ist 15 Minuten gültig und kann nur einmal verwendet werden.'
   App\Api\Support\PremiumMailer:
     EMAIL_FROM_NAME: 'Furdentity'
