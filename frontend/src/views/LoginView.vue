@@ -52,6 +52,8 @@ async function submit() {
         </p>
       </form>
 
+      <hr>
+
       <p>
         {{ t('login.noAccount') }}
         <RouterLink to="/register">{{ t('nav.register') }}</RouterLink>

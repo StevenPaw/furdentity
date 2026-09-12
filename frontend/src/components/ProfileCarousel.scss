@@ -95,11 +95,10 @@
   aspect-ratio: 1 / 1;
   border-radius: var(--mini-card-avatar-radius, 50%);
   clip-path: var(--mini-card-avatar-clip-path, none);
-  background-color: var(--mini-card-maincolor);
   background-size: cover;
   background-position: center;
   transform: translateX(-50%);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
 .mini-card-title {

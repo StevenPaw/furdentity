@@ -52,7 +52,8 @@ async function submit() {
         <label for="handle">{{ t('register.username') }}</label>
         <p class="url-preview">furdentity.com/id/<input
           id="handle"
-          v-model="handle"
+          :value="handle"
+          @input="handle = $event.target.value.toLowerCase().replace(/\s/g, '_').replace(/[^a-z0-9_-]/g, '')"
           type="text"
           pattern="[a-z0-9_\-]{3,32}"
           autocomplete="off"
@@ -68,6 +69,8 @@ async function submit() {
           </button>
         </p>
       </form>
+
+      <hr>
 
       <p>
         {{ t('register.haveAccount') }}

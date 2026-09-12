@@ -157,6 +157,15 @@ class User extends DataObject
         'Handle' => true,
     ];
 
+    // Applied by populateDefaults() on every newly-created instance (e.g.
+    // User::create() in AuthController), so a profile is public unless the
+    // owner explicitly hides it in settings – without this, a fresh row's
+    // Visibility stays '' and PublicApiController's strict `filter('Visibility',
+    // 'public')` queries silently exclude the new account from listings.
+    private static array $defaults = [
+        'Visibility' => self::VISIBILITY_PUBLIC,
+    ];
+
     private static array $summary_fields = [
         'Title' => 'Name',
         'Handle' => 'Handle',
