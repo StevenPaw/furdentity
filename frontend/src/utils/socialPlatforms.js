@@ -72,23 +72,53 @@ export function getPlatform(key) {
   return PLATFORM_BY_KEY[key] || PLATFORM_BY_KEY.website
 }
 
+function isEmailLike(trimmedUrl) {
+  return /^mailto:/i.test(trimmedUrl) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUrl)
+}
+
+// The lowercased hostname (without a leading "www.") for a pasted URL,
+// defaulting to https:// if no scheme was given - or null if it can't be
+// parsed as a URL at all (e.g. a bare word with no dot for the browser's
+// URL parser to recognize as a host).
+function parseHostname(trimmedUrl) {
+  let hostname
+  try {
+    hostname = new URL(/^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`).hostname
+  } catch {
+    return null
+  }
+
+  return hostname.replace(/^www\./, '').toLowerCase()
+}
+
 /** Guesses a platform key from a pasted URL, falling back to 'website' (or 'mail' for mailto: links). */
 export function detectPlatform(url) {
   const trimmed = (url || '').trim()
 
-  if (/^mailto:/i.test(trimmed) || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+  if (isEmailLike(trimmed)) {
     return 'mail'
   }
 
-  let hostname
-  try {
-    hostname = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`).hostname
-  } catch {
-    return 'website'
-  }
-
-  hostname = hostname.replace(/^www\./, '').toLowerCase()
+  const hostname = parseHostname(trimmed)
+  if (!hostname) return 'website'
 
   const match = PLATFORMS.find((p) => p.hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`)))
   return match?.key || 'website'
+}
+
+// A profile link has to point somewhere real on the public internet, not a
+// bare word/relative path - a plain <a href="s"> would otherwise resolve
+// that against the *current page* (e.g. turning "s" into
+// furdentity.com/id/s instead of failing outright). Requires an actual
+// domain name (at least one dot, e.g. "example.com") - "localhost" or a
+// bare word like "s" both get rejected. Mirrored server-side by
+// App\Api\Support\LinkUrlValidator, which is the actual source of truth -
+// this is only for immediate feedback in the form.
+export function isValidLinkUrl(url) {
+  const trimmed = (url || '').trim()
+  if (trimmed === '') return false
+  if (isEmailLike(trimmed)) return true
+
+  const hostname = parseHostname(trimmed)
+  return Boolean(hostname) && hostname !== 'localhost' && hostname.includes('.')
 }

@@ -7,6 +7,7 @@ use App\Api\Support\JwtService;
 use App\Api\Support\MollieService;
 use App\Api\Support\PremiumMailer;
 use App\Api\Support\ProfileImageException;
+use App\Api\Support\LinkUrlValidator;
 use App\Api\Support\ProfileImageStore;
 use App\Api\Support\SocialPlatformDetector;
 use App\Model\ProfileLink;
@@ -482,6 +483,10 @@ class InternalApiController extends ApiController
             $this->error('url is required', 422);
         }
 
+        if (!LinkUrlValidator::isValid($url)) {
+            $this->error('url must be a full URL with a domain', 422);
+        }
+
         $placement = trim((string) ($body['placement'] ?? '')) ?: ProfileLink::PLACEMENT_BELOW;
 
         if (!in_array($placement, [ProfileLink::PLACEMENT_BELOW, ProfileLink::PLACEMENT_CARD], true)) {
@@ -548,6 +553,10 @@ class InternalApiController extends ApiController
 
             if ($url === '') {
                 $this->error('url cannot be empty', 422);
+            }
+
+            if (!LinkUrlValidator::isValid($url)) {
+                $this->error('url must be a full URL with a domain', 422);
             }
 
             $link->URL = $url;

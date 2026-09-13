@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
-import { detectPlatform, getPlatform } from '../utils/socialPlatforms'
+import { detectPlatform, getPlatform, isValidLinkUrl } from '../utils/socialPlatforms'
 
 const props = defineProps({
   link: { type: Object, default: null }, // null => creating a new link
@@ -40,6 +40,11 @@ function onTitleInput() {
 async function save() {
   if (!url.value.trim()) {
     error.value = t('profile.linkUrlRequired')
+    return
+  }
+
+  if (!isValidLinkUrl(url.value)) {
+    error.value = t('profile.linkUrlInvalid')
     return
   }
 

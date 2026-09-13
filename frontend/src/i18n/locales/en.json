@@ -82,6 +82,7 @@
     "linkModalTitle": "Link",
     "linkUrl": "URL",
     "linkUrlRequired": "URL can't be empty.",
+    "linkUrlInvalid": "Enter a full URL with a domain, e.g. https://example.com.",
     "linkTitle": "Title",
     "linkTitlePlaceholder": "e.g. Instagram",
     "linkPlatform": "Platform",
