@@ -1,8 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
-import { PLATFORMS, detectPlatform, getPlatform } from '../utils/socialPlatforms'
+import { detectPlatform, getPlatform } from '../utils/socialPlatforms'
 
 const props = defineProps({
   link: { type: Object, default: null }, // null => creating a new link
@@ -14,29 +14,23 @@ const { t } = useI18n()
 
 const url = ref(props.link?.url || '')
 const title = ref(props.link?.title || '')
-const platform = ref(props.link?.platform || 'website')
-const platformTouched = ref(Boolean(props.link))
 const titleTouched = ref(Boolean(props.link?.title))
 
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref('')
 
-function applyPlatform(key) {
-  platform.value = key
-  if (!titleTouched.value) {
-    title.value = getPlatform(key).label
-  }
-}
+// Read-only, derived straight from the URL - the backend re-derives this
+// exact same way and never trusts a client-supplied platform (see
+// App\Api\Support\SocialPlatformDetector), so there's nothing here for the
+// user to override: the icon shown is always guaranteed to match where the
+// link actually goes.
+const platform = computed(() => detectPlatform(url.value))
 
 function onUrlInput() {
-  if (platformTouched.value) return
-  applyPlatform(detectPlatform(url.value))
-}
-
-function onPlatformChange() {
-  platformTouched.value = true
-  applyPlatform(platform.value)
+  if (!titleTouched.value) {
+    title.value = getPlatform(platform.value).label
+  }
 }
 
 function onTitleInput() {
@@ -52,7 +46,7 @@ async function save() {
   saving.value = true
   error.value = ''
   try {
-    const data = { url: url.value.trim(), title: title.value.trim(), platform: platform.value }
+    const data = { url: url.value.trim(), title: title.value.trim() }
     const saved = props.link
       ? await api.updateLink(props.link.id, data)
       : await api.createLink({ ...data, placement: props.placement })
@@ -96,13 +90,12 @@ async function remove() {
         @input="onTitleInput"
       />
 
-      <label for="link-platform">{{ t('profile.linkPlatform') }}</label>
-      <div class="platform-picker">
+      <span class="platform-label">{{ t('profile.linkPlatform') }}</span>
+      <div class="platform-picker" :title="t('profile.linkPlatformHint')">
         <img :src="getPlatform(platform).icon" alt="" class="platform-picker_icon" />
-        <select id="link-platform" v-model="platform" @change="onPlatformChange">
-          <option v-for="p in PLATFORMS" :key="p.key" :value="p.key">{{ p.label }}</option>
-        </select>
+        <span class="platform-picker_name">{{ getPlatform(platform).label }}</span>
       </div>
+      <p class="platform-hint">{{ t('profile.linkPlatformHint') }}</p>
 
       <p v-if="error" class="modal-error">{{ error }}</p>
 

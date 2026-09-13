@@ -51,6 +51,13 @@
       cursor: grabbing;
     }
   }
+
+  // In edit mode (and not already mid-adjustment), clicking anywhere on the
+  // background opens the same picker as its own pencil button - see
+  // ProfileView.vue.
+  &--editable {
+    cursor: pointer;
+  }
 }
 
 // Small hint shown while the background image is being live-adjusted -
@@ -127,6 +134,13 @@
     &:active {
       cursor: grabbing;
     }
+  }
+
+  // In edit mode (and not already mid-adjustment), clicking anywhere on the
+  // avatar opens the same picker as its own pencil button - see
+  // ProfileView.vue.
+  &--editable {
+    cursor: pointer;
   }
 }
 
@@ -259,6 +273,12 @@
   align-items: center;
   justify-content: center;
   gap: 1.8cqw;
+
+  // In edit mode, clicking anywhere on the row (not just its own pencil
+  // button) opens the same field editor - see ProfileView.vue.
+  &--editable {
+    cursor: pointer;
+  }
 }
 
 .card-row--species {

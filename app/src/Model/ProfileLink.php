@@ -11,8 +11,12 @@ use SilverStripe\Security\Security;
  * A single link a {@see User} has added to their public profile (e.g. their
  * Instagram or a personal website). The Platform is an icon key from the
  * frontend's platform registry (frontend/src/utils/socialPlatforms.js) –
- * auto-detected from the URL there, but freely overridable by the user, so
- * it's stored as a plain string rather than validated against a fixed list.
+ * always derived from the URL by {@see \App\Api\Support\SocialPlatformDetector}
+ * whenever the link is created or updated, never accepted from the client,
+ * so a link's displayed icon can never claim a destination the URL doesn't
+ * actually point to. Still stored as a plain string rather than validated
+ * against a fixed list here, since the detector already guarantees it's one
+ * of its own known keys (or 'website'/'mail').
  *
  * @property string $URL
  * @property string $Title

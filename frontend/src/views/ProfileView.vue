@@ -260,6 +260,21 @@ function onLinkDragStart(index) {
   draggedLinkIndex.value = index
 }
 
+// In edit mode, clicking the link itself (not just its small pencil button)
+// opens the same edit modal instead of navigating away - outside edit mode
+// this is a no-op, so the link still opens normally.
+function onCardLinkClick(event, slot) {
+  if (!editMode.value) return
+  event.preventDefault()
+  cardLinkModalTarget.value = slot
+}
+
+function onBelowLinkClick(event, link) {
+  if (!editMode.value) return
+  event.preventDefault()
+  linkModalTarget.value = link
+}
+
 async function onLinkDrop(targetIndex) {
   const from = draggedLinkIndex.value
   draggedLinkIndex.value = null
@@ -326,6 +341,7 @@ async function onLinkDrop(targetIndex) {
           class="card-background"
           :class="{
             'card-background--adjusting': adjustTarget === 'background',
+            'card-background--editable': editMode && !adjustTarget,
             'card-focus-dim': adjustTarget === 'avatar',
           }"
           :style="profile.backgroundUrl && adjustTarget !== 'background' ? { backgroundImage: `url(${profile.backgroundUrl}), ${CARD_BACKGROUND_GRADIENT_CSS}` } : null"
@@ -333,6 +349,7 @@ async function onLinkDrop(targetIndex) {
           @pointermove="adjustTarget === 'background' && onAdjustDragMove($event)"
           @pointerup="adjustTarget === 'background' && onAdjustDragEnd()"
           @pointercancel="adjustTarget === 'background' && onAdjustDragEnd()"
+          @click="editMode && !adjustTarget && (pickModalTarget = 'background')"
           :ref="(el) => adjustTarget === 'background' && setAdjustStage(el)"
         >
           <img
@@ -370,12 +387,16 @@ async function onLinkDrop(targetIndex) {
         >
           <div
             class="card-avatar-shape"
-            :class="{ 'card-avatar-shape--adjusting': adjustTarget === 'avatar' }"
+            :class="{
+              'card-avatar-shape--adjusting': adjustTarget === 'avatar',
+              'card-avatar-shape--editable': editMode && !adjustTarget,
+            }"
             :style="profile.avatarUrl && adjustTarget !== 'avatar' ? { backgroundImage: `url(${profile.avatarUrl})` } : null"
             @pointerdown="adjustTarget === 'avatar' && onAdjustDragStart($event)"
             @pointermove="adjustTarget === 'avatar' && onAdjustDragMove($event)"
             @pointerup="adjustTarget === 'avatar' && onAdjustDragEnd()"
             @pointercancel="adjustTarget === 'avatar' && onAdjustDragEnd()"
+            @click="editMode && !adjustTarget && (pickModalTarget = 'avatar')"
             :ref="(el) => adjustTarget === 'avatar' && setAdjustStage(el)"
           >
             <img
@@ -458,7 +479,11 @@ async function onLinkDrop(targetIndex) {
         </div>
 
         <div class="card-body" :class="{ 'card-focus-dim': adjustTarget }">
-          <div class="card-row card-row--title">
+          <div
+            class="card-row card-row--title"
+            :class="{ 'card-row--editable': editMode }"
+            @click="editMode && (activeField = 'title')"
+          >
             <h1 class="card-title">{{ profile.title }}</h1>
             <button
               v-if="editMode"
@@ -471,7 +496,12 @@ async function onLinkDrop(targetIndex) {
             </button>
           </div>
 
-          <div v-if="editMode || profile.species" class="card-row card-row--species">
+          <div
+            v-if="editMode || profile.species"
+            class="card-row card-row--species"
+            :class="{ 'card-row--editable': editMode }"
+            @click="editMode && (activeField = 'species')"
+          >
             <p class="card-species" :class="{ 'card-species--empty': !profile.species }">
               {{ profile.species || t('profile.addSpecies') }}
             </p>
@@ -488,7 +518,12 @@ async function onLinkDrop(targetIndex) {
 
           <hr class="card-divider" />
 
-          <div v-if="editMode || profile.bio" class="card-row card-row--bio">
+          <div
+            v-if="editMode || profile.bio"
+            class="card-row card-row--bio"
+            :class="{ 'card-row--editable': editMode }"
+            @click="editMode && (activeField = 'bio')"
+          >
             <p class="card-bio" :class="{ 'card-bio--empty': !profile.bio }">
               {{ profile.bio || t('profile.addBio') }}
             </p>
@@ -513,6 +548,7 @@ async function onLinkDrop(targetIndex) {
                   class="card-link-icon"
                   :aria-label="slot.title || getPlatform(slot.platform).label"
                   :title="slot.title || getPlatform(slot.platform).label"
+                  @click="onCardLinkClick($event, slot)"
                 >
                   <img :src="getPlatform(slot.platform).icon" alt="" />
                 </a>
@@ -570,7 +606,13 @@ async function onLinkDrop(targetIndex) {
             @drop="onLinkDrop(index)"
           >
             <span v-if="editMode" class="link-drag-handle" aria-hidden="true">⠿</span>
-            <a :href="link.url" target="_blank" rel="noopener noreferrer" class="link-row">
+            <a
+              :href="link.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link-row"
+              @click="onBelowLinkClick($event, link)"
+            >
               <img :src="getPlatform(link.platform).icon" alt="" class="link-icon" />
               <span class="link-title">{{ link.title || link.url }}</span>
             </a>

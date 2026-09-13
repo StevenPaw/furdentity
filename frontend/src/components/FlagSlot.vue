@@ -15,7 +15,11 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="flag-slot" :class="[`flag-slot--${size}`, { 'card-focus-dim': dim }]">
+  <div
+    class="flag-slot"
+    :class="[`flag-slot--${size}`, { 'card-focus-dim': dim, 'flag-slot--editable': editMode && flagKey }]"
+    @click="editMode && flagKey && $emit('pick')"
+  >
     <FlagBadge v-if="flagKey" :flag-key="flagKey" />
     <button
       v-else-if="editMode"

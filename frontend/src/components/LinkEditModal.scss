@@ -18,14 +18,14 @@
   padding: 1.25rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
 
-  label {
+  label,
+  .platform-label {
     display: block;
     margin: 0.75rem 0 0.25rem;
     font-weight: 600;
   }
 
-  input,
-  select {
+  input {
     width: 100%;
     font: inherit;
     padding: 0.5rem;
@@ -38,14 +38,14 @@
   margin: 0;
 }
 
+// Read-only - the platform/icon is always derived from the URL (both here,
+// for the live preview, and authoritatively on the server), never something
+// the user picks - see LinkEditModal.vue.
 .platform-picker {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-
-  select {
-    flex: 1;
-  }
+  opacity: 0.85;
 }
 
 .platform-picker_icon {
@@ -56,6 +56,12 @@
   padding: 5px;
   border-radius: 50%;
   background: #2e2e33;
+}
+
+.platform-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.65;
 }
 
 .modal-error {

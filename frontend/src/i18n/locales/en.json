@@ -85,6 +85,7 @@
     "linkTitle": "Title",
     "linkTitlePlaceholder": "e.g. Instagram",
     "linkPlatform": "Platform",
+    "linkPlatformHint": "Detected automatically",
     "notFound": "This profile doesn't exist.",
     "private": "This profile has been set to private by its owner.",
     "editAvatar": "Edit avatar",

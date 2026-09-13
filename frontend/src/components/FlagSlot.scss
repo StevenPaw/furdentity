@@ -28,6 +28,12 @@
   &--small {
     width: 8.7cqw; // ~2/3 of --big, per "outer flags a third smaller"
   }
+
+  // In edit mode, clicking anywhere on a filled flag opens the same picker
+  // as its own pencil button - see ProfileView.vue.
+  &--editable {
+    cursor: pointer;
+  }
 }
 
 .flag-slot-empty {

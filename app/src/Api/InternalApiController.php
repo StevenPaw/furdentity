@@ -8,6 +8,7 @@ use App\Api\Support\MollieService;
 use App\Api\Support\PremiumMailer;
 use App\Api\Support\ProfileImageException;
 use App\Api\Support\ProfileImageStore;
+use App\Api\Support\SocialPlatformDetector;
 use App\Model\ProfileLink;
 use App\Model\User;
 use App\Model\UserSession;
@@ -502,7 +503,11 @@ class InternalApiController extends ApiController
         $link = ProfileLink::create();
         $link->URL = $url;
         $link->Title = trim((string) ($body['title'] ?? ''));
-        $link->Platform = trim((string) ($body['platform'] ?? '')) ?: 'website';
+        // Never taken from the client (see SocialPlatformDetector's
+        // docblock) - always derived from the URL itself, so the displayed
+        // icon can't be spoofed to claim a destination the link doesn't
+        // actually point to.
+        $link->Platform = SocialPlatformDetector::detect($url);
         $link->Placement = $placement;
         $link->SortOrder = $nextSort;
         $link->UserID = $this->authenticatedUser->ID;
@@ -552,9 +557,11 @@ class InternalApiController extends ApiController
             $link->Title = (string) $body['title'];
         }
 
-        if (array_key_exists('platform', $body)) {
-            $link->Platform = (string) $body['platform'];
-        }
+        // Never taken from the client (see SocialPlatformDetector's
+        // docblock) - always re-derived from the link's current URL, so it
+        // can't drift from whatever's actually in $link->URL, whether that
+        // was just updated above or is unchanged from before.
+        $link->Platform = SocialPlatformDetector::detect((string) $link->URL);
 
         $link->write();
 
