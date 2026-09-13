@@ -1,0 +1,58 @@
+// Sized/laid out by the parent .flag-group (see ProfileView.vue/
+// ProfileCard.scss) - this is just the box for one flag (or, in edit mode,
+// its empty-slot placeholder).
+.flag-slot {
+  position: relative;
+  // Matches flag-icons' native SVG ratio so country flags aren't
+  // letterboxed inside the badge; every flag (country or pride) gets
+  // cropped to fill this box instead (see FlagBadge.vue's object-fit:
+  // cover equivalent) rather than relying on matching this ratio exactly.
+  aspect-ratio: 4 / 3;
+  border-radius: 2px;
+  overflow: visible; // .flag-slot-edit's corner badge pokes outside the box
+  transition: filter 0.25s ease, width 0.25s ease;
+
+  // The inner slot is always shown at the "full" size, whether it's paired
+  // with an outer flag or is the only flag set on that side. The outer
+  // slot only shrinks to the smaller size once there *is* an inner flag
+  // for it to be secondary to (see ProfileView.vue's leftOuterIsBig/
+  // rightOuterIsBig) - otherwise, being the only flag on that side, it
+  // takes the same full size the inner slot would.
+  &--big {
+    width: 13cqw;
+  }
+
+  &--small {
+    width: 8.7cqw; // ~2/3 of --big, per "outer flags a third smaller"
+  }
+}
+
+.flag-slot-empty {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.flag-slot-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 16px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid var(--card-body-color);
+  border-radius: 50%;
+  background: #000;
+  color: inherit;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+}

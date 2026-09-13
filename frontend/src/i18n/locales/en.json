@@ -89,8 +89,10 @@
     "private": "This profile has been set to private by its owner.",
     "editAvatar": "Edit avatar",
     "editBackground": "Edit background image",
-    "editFlagLeft": "Edit left flag",
-    "editFlagRight": "Edit right flag",
+    "editFlagLeftInner": "Edit left flag",
+    "editFlagLeftOuter": "Edit outer left flag",
+    "editFlagRightInner": "Edit right flag",
+    "editFlagRightOuter": "Edit outer right flag",
     "addFlag": "Add flag",
     "flagModalTitle": "Choose a flag",
     "flagSearchPlaceholder": "Search…",
@@ -108,12 +110,14 @@
     "designShapeRoundedSquare": "Rounded square",
     "designShapeSquare": "Square",
     "designShapeHexagon": "Hexagon",
+    "designShapeHeart": "Heart",
     "crop": {
       "avatarHeading": "Avatar",
       "backgroundHeading": "Background image",
       "chooseImage": "Choose image",
       "chooseDifferentImage": "Choose a different image",
-      "zoom": "Zoom"
+      "zoom": "Zoom",
+      "dragHint": "Drag to reposition"
     }
   },
   "loginConfirm": {

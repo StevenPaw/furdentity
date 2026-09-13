@@ -64,11 +64,13 @@ class User extends DataObject
     public const string AVATAR_SHAPE_ROUNDED_SQUARE = 'rounded-square';
     public const string AVATAR_SHAPE_SQUARE = 'square';
     public const string AVATAR_SHAPE_HEXAGON = 'hexagon';
+    public const string AVATAR_SHAPE_HEART = 'heart';
     public const array AVATAR_SHAPES = [
         self::AVATAR_SHAPE_CIRCLE,
         self::AVATAR_SHAPE_ROUNDED_SQUARE,
         self::AVATAR_SHAPE_SQUARE,
         self::AVATAR_SHAPE_HEXAGON,
+        self::AVATAR_SHAPE_HEART,
     ];
 
     // "public" – shown on the card face, the public profile endpoint, AND
@@ -110,8 +112,13 @@ class User extends DataObject
         'Handle' => 'Varchar(255)',
         'Bio' => 'Text',
         'Species' => 'Varchar(255)',
-        'FlagLeft' => 'Varchar(32)',
-        'FlagRight' => 'Varchar(32)',
+        // Each side has an inner (closer to the avatar, shown larger) and
+        // an outer (further out, shown smaller) slot - see ProfileCard.scss
+        // for the sizing and the "only one set on this side" centering.
+        'FlagLeftInner' => 'Varchar(32)',
+        'FlagLeftOuter' => 'Varchar(32)',
+        'FlagRightInner' => 'Varchar(32)',
+        'FlagRightOuter' => 'Varchar(32)',
         'CardMainColor' => 'Varchar(9)',
         'CardSecondaryColor' => 'Varchar(9)',
         'AvatarShape' => 'Varchar(20)',
@@ -256,7 +263,7 @@ class User extends DataObject
      * {@see \App\Api\PublicApiController::profile()}, which refuses to call
      * this at all for a {@see self::VISIBILITY_HIDDEN} profile.
      *
-     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, flagLeft: ?string, flagRight: ?string, mainColor: ?string, secondaryColor: ?string, avatarShape: string, visibility: string, links: array}
+     * @return array{id: int, title: string, handle: string, bio: string, species: string, avatarUrl: ?string, backgroundUrl: ?string, flagLeftInner: ?string, flagLeftOuter: ?string, flagRightInner: ?string, flagRightOuter: ?string, mainColor: ?string, secondaryColor: ?string, avatarShape: string, visibility: string, links: array}
      */
     public function toApiData(): array
     {
@@ -268,8 +275,10 @@ class User extends DataObject
             'species' => (string) $this->Species,
             'avatarUrl' => $this->avatarUrl(),
             'backgroundUrl' => $this->backgroundUrl(),
-            'flagLeft' => (string) $this->FlagLeft ?: null,
-            'flagRight' => (string) $this->FlagRight ?: null,
+            'flagLeftInner' => (string) $this->FlagLeftInner ?: null,
+            'flagLeftOuter' => (string) $this->FlagLeftOuter ?: null,
+            'flagRightInner' => (string) $this->FlagRightInner ?: null,
+            'flagRightOuter' => (string) $this->FlagRightOuter ?: null,
             'mainColor' => (string) $this->CardMainColor ?: null,
             'secondaryColor' => (string) $this->CardSecondaryColor ?: null,
             'avatarShape' => (string) $this->AvatarShape ?: self::AVATAR_SHAPE_CIRCLE,

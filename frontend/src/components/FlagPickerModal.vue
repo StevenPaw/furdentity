@@ -6,7 +6,10 @@ import { SPECIAL_FLAGS, getCountryFlags } from '../utils/flags'
 import FlagBadge from './FlagBadge.vue'
 
 const props = defineProps({
-  side: { type: String, required: true }, // 'left' | 'right'
+  // The exact profile field this picker edits - one of flagLeftInner/
+  // flagLeftOuter/flagRightInner/flagRightOuter - so this component and the
+  // API PATCH body key are always in sync without a side->field mapping.
+  field: { type: String, required: true },
   currentKey: { type: String, default: null },
 })
 const emit = defineEmits(['close', 'saved'])
@@ -30,8 +33,7 @@ async function select(key) {
   saving.value = true
   error.value = ''
   try {
-    const field = props.side === 'left' ? 'flagLeft' : 'flagRight'
-    const updated = await api.updateMe({ [field]: key })
+    const updated = await api.updateMe({ [props.field]: key })
     emit('saved', updated)
   } catch (e) {
     error.value = e.message

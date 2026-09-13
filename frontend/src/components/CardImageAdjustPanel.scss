@@ -1,0 +1,151 @@
+// Positioned/sized in cqw against the profile card (see .card in
+// ProfileCard.scss) - this component is always rendered as a direct child
+// of .card, so those units resolve against the card's own current size just
+// like every other on-card element.
+.card-adjust-panel {
+  position: absolute;
+  top: 45cqw;
+  left: 0;
+  width: 100cqw;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2.5cqw;
+  padding: 4cqw;
+  border-radius: 3cqw;
+  // Square top corners - the panel sits flush against the background/avatar
+  // boundary (top: 45cqw) rather than floating as a separate card over it.
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background: rgba(20, 20, 24, 0.82);
+  backdrop-filter: blur(6px);
+  color: #fff;
+
+  // pointer-events: none on the panel itself + auto on its content lets
+  // clicks/drags in the padding-top area (avatar variant, see below) pass
+  // straight through to whatever real card element sits underneath, rather
+  // than being swallowed by empty panel padding.
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+
+  &--background {
+    // Stronger downward shadow - separates the panel from the vivid
+    // background image behind/above it much more clearly than the subtler
+    // shadow used elsewhere on the card.
+    box-shadow: 0 24px 32px -8px rgba(0, 0, 0, 0.6);
+  }
+
+  // The avatar circle (top: 20cqw, height: 40cqw) dips into the panel's own
+  // box down to its bottom edge at 60cqw - the padding-top keeps the panel's
+  // actual content clear of it, while the panel's background/shadow still
+  // starts at the same 45cqw boundary as the background variant.
+  &--avatar {
+    padding-top: 15cqw;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.card-adjust-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  font-size: 3.6cqw;
+
+  input[type='range'] {
+    flex: 1;
+  }
+}
+
+.shape-picker {
+  display: flex;
+  justify-content: center;
+  gap: 2cqw;
+}
+
+.shape-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9cqw;
+  height: 9cqw;
+  padding: 0;
+  border-radius: 2cqw;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: none;
+  cursor: pointer;
+
+  &--active {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.shape-option-swatch {
+  width: 5.5cqw;
+  height: 5.5cqw;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+.card-adjust-pick-btn {
+  display: block;
+  text-align: center;
+  font-size: 3.6cqw;
+  padding: 2cqw;
+  border-radius: 2cqw;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.card-adjust-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.card-adjust-error {
+  margin: 0;
+  font-size: 3.2cqw;
+  color: #ff8080;
+  text-align: center;
+}
+
+.card-adjust-actions {
+  display: flex;
+  justify-content: center;
+  gap: 4cqw;
+}
+
+.card-adjust-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 11cqw;
+  height: 11cqw;
+  border-radius: 50%;
+  border: none;
+  font-size: 4.5cqw;
+  cursor: pointer;
+
+  &--cancel {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  &--confirm {
+    background: #4caf50;
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}

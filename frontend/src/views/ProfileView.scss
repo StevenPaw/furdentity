@@ -22,6 +22,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  // .page-backdrop forces a dark background *regardless* of the visitor's
+  // light/dark OS preference, but text color elsewhere on the page is left
+  // to follow that preference automatically (main.scss's `color-scheme:
+  // light dark`, no explicit color set) - fine on every other page, where
+  // the actual background also follows that same preference, but not here:
+  // in light mode this left text/borders (e.g. .edit-toggle's "Edit"/
+  // "Done" button, which only sets `color: inherit`) defaulting to
+  // near-black against the backdrop's always-dark photo, unreadably low
+  // contrast. Only applied when the backdrop actually renders - without a
+  // background photo this container sits on the ordinary, preference-
+  // following page background, where inherited color is already correct.
+  &--has-backdrop {
+    color: #fff;
+  }
 }
 
 .edit-bar {
@@ -30,6 +45,7 @@
   margin: 0 0 0.75rem;
   display: flex;
   align-items: center;
+  transition: filter 0.25s ease, opacity 0.25s ease;
 }
 
 .edit-bar_spacer {
@@ -69,6 +85,7 @@
   width: 100%;
   max-width: 360px;
   margin-top: 1.25rem;
+  transition: filter 0.25s ease, opacity 0.25s ease;
 }
 
 .links-list {

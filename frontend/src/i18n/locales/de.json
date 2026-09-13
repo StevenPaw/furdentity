@@ -89,8 +89,10 @@
     "private": "Dieses Profil wurde von seinem Besitzer auf privat gestellt.",
     "editAvatar": "Profilbild bearbeiten",
     "editBackground": "Hintergrundbild bearbeiten",
-    "editFlagLeft": "Linke Flagge bearbeiten",
-    "editFlagRight": "Rechte Flagge bearbeiten",
+    "editFlagLeftInner": "Linke Flagge bearbeiten",
+    "editFlagLeftOuter": "Äußere linke Flagge bearbeiten",
+    "editFlagRightInner": "Rechte Flagge bearbeiten",
+    "editFlagRightOuter": "Äußere rechte Flagge bearbeiten",
     "addFlag": "Flagge hinzufügen",
     "flagModalTitle": "Flagge auswählen",
     "flagSearchPlaceholder": "Suchen…",
@@ -108,12 +110,14 @@
     "designShapeRoundedSquare": "Abgerundetes Quadrat",
     "designShapeSquare": "Eckiges Quadrat",
     "designShapeHexagon": "Hexagon",
+    "designShapeHeart": "Herz",
     "crop": {
       "avatarHeading": "Profilbild",
       "backgroundHeading": "Hintergrundbild",
       "chooseImage": "Bild auswählen",
       "chooseDifferentImage": "Anderes Bild wählen",
-      "zoom": "Zoom"
+      "zoom": "Zoom",
+      "dragHint": "Ziehen zum Verschieben"
     }
   },
   "loginConfirm": {

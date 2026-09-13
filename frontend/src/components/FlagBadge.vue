@@ -49,5 +49,16 @@ const flag = computed(() => getFlag(props.flagKey, locale.value))
   height: 100%;
   min-width: 0;
   aspect-ratio: auto;
+  // Both libraries set their own background-size: contain (see flag-icons'
+  // .fi / pride-flags' .flag) - fine only as long as the badge box happens
+  // to share the flag's native ratio exactly, which isn't guaranteed once
+  // every flag slot (see ProfileCard.scss's .flag-slot) can be one of
+  // several fixed sizes. `cover` (the background-image equivalent of
+  // object-fit: cover) crops instead of letterboxing when they don't match,
+  // same intent as object-fit: cover on an <img>. !important because both
+  // libraries' own rules match with the same specificity as this one, so
+  // the actual winner would otherwise depend on unpredictable stylesheet
+  // injection order between this scoped style and the global CSS imports.
+  background-size: cover !important;
 }
 </style>

@@ -30,7 +30,7 @@ use Throwable;
  *   GET    /api/v1/internal/me
  *   PATCH  /api/v1/internal/me    { "title"?: "...", "bio"?: "...", "species"?: "...",
  *                                   "mainColor"?: "#rrggbb", "secondaryColor"?: "#rrggbb",
- *                                   "avatarShape"?: "circle"|"rounded-square"|"square"|"hexagon",
+ *                                   "avatarShape"?: "circle"|"rounded-square"|"square"|"hexagon"|"heart",
  *                                   "visibility"?: "public"|"unlisted"|"hidden" } –
  *                                 Handle is deliberately not editable here; once set at
  *                                 registration only a CMS admin can change it. An empty
@@ -178,9 +178,9 @@ class InternalApiController extends ApiController
     }
 
     /**
-     * Deliberately only accepts title/bio/species/flagLeft/flagRight –
-     * Handle is permanent once set at registration and from then on only
-     * editable by a CMS admin.
+     * Deliberately only accepts title/bio/species/flagLeftInner/
+     * flagLeftOuter/flagRightInner/flagRightOuter – Handle is permanent once
+     * set at registration and from then on only editable by a CMS admin.
      */
     private function updateCurrentUser(): HTTPResponse
     {
@@ -211,12 +211,20 @@ class InternalApiController extends ApiController
 
         // Empty string clears the slot – the frontend's flag picker sends
         // this for "remove flag" rather than a separate DELETE-style call.
-        if (array_key_exists('flagLeft', $body)) {
-            $user->FlagLeft = $this->validatedFlagKey($body['flagLeft']);
+        if (array_key_exists('flagLeftInner', $body)) {
+            $user->FlagLeftInner = $this->validatedFlagKey($body['flagLeftInner']);
         }
 
-        if (array_key_exists('flagRight', $body)) {
-            $user->FlagRight = $this->validatedFlagKey($body['flagRight']);
+        if (array_key_exists('flagLeftOuter', $body)) {
+            $user->FlagLeftOuter = $this->validatedFlagKey($body['flagLeftOuter']);
+        }
+
+        if (array_key_exists('flagRightInner', $body)) {
+            $user->FlagRightInner = $this->validatedFlagKey($body['flagRightInner']);
+        }
+
+        if (array_key_exists('flagRightOuter', $body)) {
+            $user->FlagRightOuter = $this->validatedFlagKey($body['flagRightOuter']);
         }
 
         // Empty "secondaryColor" clears it, meaning "solid color mode" –

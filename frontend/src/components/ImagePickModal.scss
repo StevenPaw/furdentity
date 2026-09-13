@@ -1,0 +1,67 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: canvas;
+  color: canvastext;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.modal-heading {
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+
+  button {
+    font: inherit;
+    padding: 0.5rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .modal-cancel {
+    opacity: 0.7;
+  }
+}
+
+.crop-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.crop-pick-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  font: inherit;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px dashed currentColor;
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  opacity: 0.8;
+  cursor: pointer;
+}

@@ -1,17 +1,31 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, isAuthenticated } from '../api/client'
 import { getPlatform } from '../utils/socialPlatforms'
 import ProfileFieldEditModal from '../components/ProfileFieldEditModal.vue'
 import LinkEditModal from '../components/LinkEditModal.vue'
-import ImageCropModal from '../components/ImageCropModal.vue'
+import ImagePickModal from '../components/ImagePickModal.vue'
+import CardImageAdjustPanel from '../components/CardImageAdjustPanel.vue'
 import FlagPickerModal from '../components/FlagPickerModal.vue'
-import FlagBadge from '../components/FlagBadge.vue'
+import FlagSlot from '../components/FlagSlot.vue'
 import DesignPickerModal from '../components/DesignPickerModal.vue'
 import designIcon from '../assets/icons/design.svg'
-import { avatarShapeStyle, DEFAULT_AVATAR_SHAPE } from '../utils/avatarShapes'
+import { avatarShapeMaskImage, DEFAULT_AVATAR_SHAPE } from '../utils/avatarShapes'
+import { useImageAdjuster } from '../composables/useImageAdjuster'
+
+// Comfortably above the server's own 500px cap (see ProfileImageStore) so
+// the crop itself is never the limiting factor for quality.
+const OUTPUT_WIDTH = 1000
+
+// Mirrors .card-background's own CSS gradient (ProfileCard.scss) - repeated
+// here (rather than only in the stylesheet) so a saved background photo can
+// be layered *on top* of it via a single inline background-image, letting
+// the same gradient show through any transparent part of that photo instead
+// of the plain white/black a browser would otherwise composite against.
+const CARD_BACKGROUND_GRADIENT_CSS =
+  'linear-gradient(to bottom right, var(--card-maincolor, #6c5ce7), var(--card-secondarycolor, #6c5ce7))'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -26,11 +40,61 @@ const activeField = ref(null) // 'title' | 'species' | 'bio' | null
 const linkModalTarget = ref(null) // null (closed) | 'new' | a link object – for the below-card list
 const cardLinkModalTarget = ref(null) // same, but for the 3 on-card slots
 const draggedLinkIndex = ref(null)
-const imageCropTarget = ref(null) // null (closed) | 'avatar' | 'background'
-const flagPickerSide = ref(null) // null (closed) | 'left' | 'right'
+const flagPickerField = ref(null) // null (closed) | 'flagLeftInner' | 'flagLeftOuter' | 'flagRightInner' | 'flagRightOuter'
 const designModalOpen = ref(false)
 
+// Image editing: a minimal picker modal ('pickModalTarget') first collects
+// the file, then the live adjustment happens directly on the real card face
+// ('adjustTarget') instead of in a standalone crop-stage modal - see
+// CardImageAdjustPanel.vue and composables/useImageAdjuster.js.
+const pickModalTarget = ref(null) // null (closed) | 'avatar' | 'background'
+const adjustTarget = ref(null) // null (inactive) | 'avatar' | 'background'
+const adjustObjectUrl = ref(null)
+const adjustShape = ref(DEFAULT_AVATAR_SHAPE)
+const adjustSaving = ref(false)
+const adjustError = ref('')
+
+// Revokes the previous object URL whenever a new one is picked (or the
+// session is cancelled) - the one, single place this happens, so nothing
+// else needs to read adjustObjectUrl.value just to decide whether to revoke
+// it. That matters beyond tidiness: the profile route watchEffect below
+// resets adjustTarget/adjustObjectUrl on every route change, and if that
+// reset read adjustObjectUrl.value itself (e.g. via an `if (...)` guard), it
+// would make the *whole* watchEffect reactively depend on it - silently
+// re-running (and wiping profile/editMode) every time an in-progress image
+// adjustment picks a new file, with no navigation involved at all.
+watch(adjustObjectUrl, (url, previousUrl) => {
+  if (previousUrl) URL.revokeObjectURL(previousUrl)
+})
+
+const {
+  zoom: adjustZoom,
+  offsetX: adjustOffsetX,
+  offsetY: adjustOffsetY,
+  displayWidth: adjustDisplayWidth,
+  displayHeight: adjustDisplayHeight,
+  setStage: setAdjustStage,
+  setImage: setAdjustImageEl,
+  onImageLoad: onAdjustImageLoad,
+  onDragStart: onAdjustDragStart,
+  onDragMove: onAdjustDragMove,
+  onDragEnd: onAdjustDragEnd,
+  exportDataUrl: exportAdjustDataUrl,
+} = useImageAdjuster()
+
 const isOwner = computed(() => ownHandle.value !== null && profile.value?.handle === ownHandle.value)
+// While live-adjusting the avatar, the shape picked in the panel should be
+// reflected on the card face immediately (border-radius/clip-path), not
+// only after saving - falls back to the profile's saved shape otherwise.
+const activeAvatarShape = computed(() =>
+  adjustTarget.value === 'avatar' ? adjustShape.value : profile.value?.avatarShape || DEFAULT_AVATAR_SHAPE,
+)
+// The outer flag slot is only shown smaller once there's an inner flag next
+// to it to be secondary to - as the only flag set on that side, it takes
+// the same full size the inner slot would, so a single flag per side still
+// looks exactly like it did before there were two slots.
+const leftOuterIsBig = computed(() => !profile.value?.flagLeftInner)
+const rightOuterIsBig = computed(() => !profile.value?.flagRightInner)
 // The unlimited list shown below the card.
 const belowLinks = computed(() => (profile.value?.links || []).filter((l) => l.placement !== 'card'))
 // Up to 3 links placed directly on the card face, managed completely
@@ -49,8 +113,9 @@ watchEffect(async () => {
   activeField.value = null
   linkModalTarget.value = null
   cardLinkModalTarget.value = null
-  imageCropTarget.value = null
-  flagPickerSide.value = null
+  pickModalTarget.value = null
+  cancelAdjust()
+  flagPickerField.value = null
   designModalOpen.value = false
 
   // Resolved first (rather than after the profile fetch) because a hidden
@@ -95,14 +160,65 @@ function onFieldSaved(updated) {
   activeField.value = null
 }
 
-function onImageSaved(updated) {
-  profile.value = { ...profile.value, ...updated }
-  imageCropTarget.value = null
+function onImagePicked(file) {
+  setAdjustImage(file)
+  adjustTarget.value = pickModalTarget.value
+  adjustShape.value = profile.value.avatarShape || DEFAULT_AVATAR_SHAPE
+  adjustError.value = ''
+  pickModalTarget.value = null
+}
+
+function setAdjustImage(file) {
+  adjustObjectUrl.value = URL.createObjectURL(file)
+}
+
+function cancelAdjust() {
+  adjustObjectUrl.value = null
+  adjustTarget.value = null
+  adjustError.value = ''
+}
+
+async function confirmAdjust() {
+  adjustSaving.value = true
+  adjustError.value = ''
+  try {
+    // Avatar keeps a lossless PNG round-trip to the server (which also
+    // derives a JPEG from it - see ProfileImageStore) - transparency
+    // survives, so it needs no fill color. The background strip stays JPEG
+    // only, which has no alpha channel at all - filling with the card's own
+    // gradient first (same colors, same "no secondary set" -> solid
+    // fallback as .card-background's CSS) means a transparent source image
+    // ends up showing that gradient where it's see-through, not the plain
+    // black a browser would otherwise composite against when flattening it.
+    const dataUrl =
+      adjustTarget.value === 'avatar'
+        ? exportAdjustDataUrl(OUTPUT_WIDTH, 'image/png')
+        : exportAdjustDataUrl(OUTPUT_WIDTH, 'image/jpeg', 0.9, [
+            profile.value.mainColor || '#6c5ce7',
+            profile.value.secondaryColor || profile.value.mainColor || '#6c5ce7',
+          ])
+
+    let updated =
+      adjustTarget.value === 'avatar' ? await api.uploadAvatar(dataUrl) : await api.uploadBackground(dataUrl)
+
+    // Shape is a separate field from the image itself, so it needs its own
+    // PATCH - only sent when actually changed, to avoid a pointless write.
+    if (adjustTarget.value === 'avatar' && adjustShape.value !== (profile.value.avatarShape || DEFAULT_AVATAR_SHAPE)) {
+      updated = await api.updateMe({ avatarShape: adjustShape.value })
+    }
+
+    profile.value = { ...profile.value, ...updated }
+    cancelAdjust()
+  } catch (e) {
+    adjustError.value = e.message
+  } finally {
+    adjustSaving.value = false
+  }
 }
 
 function onFlagSaved(updated) {
   profile.value = { ...profile.value, ...updated }
-  flagPickerSide.value = null
+  flagPickerField.value = null
 }
 
 function onDesignSaved(updated) {
@@ -161,11 +277,11 @@ async function onLinkDrop(targetIndex) {
   ></div>
   <div
     class="container"
+    :class="{ 'container--has-backdrop': profile?.backgroundUrl }"
     :style="{
       '--card-maincolor': profile?.mainColor || '#6c5ce7',
       '--card-secondarycolor': profile?.secondaryColor || profile?.mainColor || '#6c5ce7',
-      '--card-avatar-radius': avatarShapeStyle(profile?.avatarShape || DEFAULT_AVATAR_SHAPE).borderRadius,
-      '--card-avatar-clip-path': avatarShapeStyle(profile?.avatarShape || DEFAULT_AVATAR_SHAPE).clipPath,
+      '--card-avatar-mask': avatarShapeMaskImage(activeAvatarShape),
     }"
   >
     <template v-if="notFound">
@@ -175,7 +291,7 @@ async function onLinkDrop(targetIndex) {
       <p>{{ t('profile.private') }}</p>
     </template>
     <template v-else-if="profile">
-      <p v-if="isOwner" class="edit-bar">
+      <p v-if="isOwner" class="edit-bar" :class="{ 'card-focus-dim': adjustTarget }">
         <button
           v-if="editMode"
           type="button"
@@ -195,83 +311,140 @@ async function onLinkDrop(targetIndex) {
       <div class="card">
         <div
           class="card-background"
-          :style="profile.backgroundUrl ? { backgroundImage: `url(${profile.backgroundUrl})` } : null"
+          :class="{
+            'card-background--adjusting': adjustTarget === 'background',
+            'card-focus-dim': adjustTarget === 'avatar',
+          }"
+          :style="profile.backgroundUrl && adjustTarget !== 'background' ? { backgroundImage: `url(${profile.backgroundUrl}), ${CARD_BACKGROUND_GRADIENT_CSS}` } : null"
+          @pointerdown="adjustTarget === 'background' && onAdjustDragStart($event)"
+          @pointermove="adjustTarget === 'background' && onAdjustDragMove($event)"
+          @pointerup="adjustTarget === 'background' && onAdjustDragEnd()"
+          @pointercancel="adjustTarget === 'background' && onAdjustDragEnd()"
+          :ref="(el) => adjustTarget === 'background' && setAdjustStage(el)"
         >
+          <img
+            v-if="adjustTarget === 'background'"
+            :ref="setAdjustImageEl"
+            :src="adjustObjectUrl"
+            alt=""
+            class="card-adjust-image"
+            draggable="false"
+            :style="{
+              width: adjustDisplayWidth + 'px',
+              height: adjustDisplayHeight + 'px',
+              transform: `translate(${adjustOffsetX}px, ${adjustOffsetY}px)`,
+            }"
+            @load="onAdjustImageLoad"
+          />
+          <p v-if="adjustTarget === 'background'" class="card-adjust-hint">{{ t('profile.crop.dragHint') }}</p>
           <button
-            v-if="editMode"
+            v-if="editMode && !adjustTarget"
             type="button"
             class="card-image-edit-btn card-image-edit-btn--background"
             :aria-label="t('profile.editBackground')"
             :title="t('profile.editBackground')"
-            @click="imageCropTarget = 'background'"
+            @click="pickModalTarget = 'background'"
           >
             ✎
           </button>
         </div>
         <div
           class="card-avatar"
-          :style="profile.avatarUrl ? { backgroundImage: `url(${profile.avatarUrl})` } : null"
+          :class="{
+            'card-avatar--adjusting': adjustTarget === 'avatar',
+            'card-focus-fade': adjustTarget === 'background',
+          }"
         >
-          <button
-            v-if="editMode"
-            type="button"
-            class="card-image-edit-btn card-image-edit-btn--avatar"
-            :aria-label="t('profile.editAvatar')"
-            :title="t('profile.editAvatar')"
-            @click="imageCropTarget = 'avatar'"
+          <div
+            class="card-avatar-shape"
+            :class="{ 'card-avatar-shape--adjusting': adjustTarget === 'avatar' }"
+            :style="profile.avatarUrl && adjustTarget !== 'avatar' ? { backgroundImage: `url(${profile.avatarUrl})` } : null"
+            @pointerdown="adjustTarget === 'avatar' && onAdjustDragStart($event)"
+            @pointermove="adjustTarget === 'avatar' && onAdjustDragMove($event)"
+            @pointerup="adjustTarget === 'avatar' && onAdjustDragEnd()"
+            @pointercancel="adjustTarget === 'avatar' && onAdjustDragEnd()"
+            :ref="(el) => adjustTarget === 'avatar' && setAdjustStage(el)"
           >
-            ✎
-          </button>
+            <img
+              v-if="adjustTarget === 'avatar'"
+              :ref="setAdjustImageEl"
+              :src="adjustObjectUrl"
+              alt=""
+              class="card-adjust-image"
+              draggable="false"
+              :style="{
+                width: adjustDisplayWidth + 'px',
+                height: adjustDisplayHeight + 'px',
+                transform: `translate(${adjustOffsetX}px, ${adjustOffsetY}px)`,
+              }"
+              @load="onAdjustImageLoad"
+            />
+          </div>
         </div>
-        <div v-if="profile.flagLeft || editMode" class="flag-slot flag-slot--left">
-          <FlagBadge v-if="profile.flagLeft" :flag-key="profile.flagLeft" />
-          <button
-            v-else-if="editMode"
-            type="button"
-            class="flag-slot-empty"
-            :aria-label="t('profile.addFlag')"
-            :title="t('profile.addFlag')"
-            @click="flagPickerSide = 'left'"
-          >
-            +
-          </button>
-          <button
-            v-if="editMode && profile.flagLeft"
-            type="button"
-            class="flag-slot-edit"
-            :aria-label="t('profile.editFlagLeft')"
-            :title="t('profile.editFlagLeft')"
-            @click="flagPickerSide = 'left'"
-          >
-            ✎
-          </button>
+        <!-- A sibling of .card-avatar, not a child of it: the avatar's own
+             overflow: hidden + clip-path (needed to clip its shape - circle,
+             hexagon, etc. - to match the saved avatarShape) would otherwise
+             clip away this corner-positioned button along with it for any
+             non-square shape, making it unclickable. -->
+        <button
+          v-if="editMode && !adjustTarget"
+          type="button"
+          class="card-image-edit-btn card-image-edit-btn--avatar"
+          :aria-label="t('profile.editAvatar')"
+          :title="t('profile.editAvatar')"
+          @click="pickModalTarget = 'avatar'"
+        >
+          ✎
+        </button>
+        <div
+          v-if="profile.flagLeftInner || profile.flagLeftOuter || editMode"
+          class="flag-group flag-group--left"
+        >
+          <FlagSlot
+            v-if="profile.flagLeftOuter || editMode"
+            :flag-key="profile.flagLeftOuter"
+            :edit-mode="editMode"
+            :size="leftOuterIsBig ? 'big' : 'small'"
+            :edit-label="t('profile.editFlagLeftOuter')"
+            :dim="!!adjustTarget"
+            @pick="flagPickerField = 'flagLeftOuter'"
+          />
+          <FlagSlot
+            v-if="profile.flagLeftInner || editMode"
+            :flag-key="profile.flagLeftInner"
+            :edit-mode="editMode"
+            size="big"
+            :edit-label="t('profile.editFlagLeftInner')"
+            :dim="!!adjustTarget"
+            @pick="flagPickerField = 'flagLeftInner'"
+          />
         </div>
 
-        <div v-if="profile.flagRight || editMode" class="flag-slot flag-slot--right">
-          <FlagBadge v-if="profile.flagRight" :flag-key="profile.flagRight" />
-          <button
-            v-else-if="editMode"
-            type="button"
-            class="flag-slot-empty"
-            :aria-label="t('profile.addFlag')"
-            :title="t('profile.addFlag')"
-            @click="flagPickerSide = 'right'"
-          >
-            +
-          </button>
-          <button
-            v-if="editMode && profile.flagRight"
-            type="button"
-            class="flag-slot-edit"
-            :aria-label="t('profile.editFlagRight')"
-            :title="t('profile.editFlagRight')"
-            @click="flagPickerSide = 'right'"
-          >
-            ✎
-          </button>
+        <div
+          v-if="profile.flagRightInner || profile.flagRightOuter || editMode"
+          class="flag-group flag-group--right"
+        >
+          <FlagSlot
+            v-if="profile.flagRightInner || editMode"
+            :flag-key="profile.flagRightInner"
+            :edit-mode="editMode"
+            size="big"
+            :edit-label="t('profile.editFlagRightInner')"
+            :dim="!!adjustTarget"
+            @pick="flagPickerField = 'flagRightInner'"
+          />
+          <FlagSlot
+            v-if="profile.flagRightOuter || editMode"
+            :flag-key="profile.flagRightOuter"
+            :edit-mode="editMode"
+            :size="rightOuterIsBig ? 'big' : 'small'"
+            :edit-label="t('profile.editFlagRightOuter')"
+            :dim="!!adjustTarget"
+            @pick="flagPickerField = 'flagRightOuter'"
+          />
         </div>
 
-        <div class="card-body">
+        <div class="card-body" :class="{ 'card-focus-dim': adjustTarget }">
           <div class="card-row card-row--title">
             <h1 class="card-title">{{ profile.title }}</h1>
             <button
@@ -354,9 +527,25 @@ async function onLinkDrop(targetIndex) {
             </div>
           </div>
         </div>
+
+        <CardImageAdjustPanel
+          v-if="adjustTarget"
+          :type="adjustTarget"
+          v-model:zoom="adjustZoom"
+          v-model:shape="adjustShape"
+          :saving="adjustSaving"
+          :error="adjustError"
+          @pick-different="setAdjustImage"
+          @cancel="cancelAdjust"
+          @confirm="confirmAdjust"
+        />
       </div>
 
-      <div v-if="editMode || belowLinks.length" class="links-section">
+      <div
+        v-if="editMode || belowLinks.length"
+        class="links-section"
+        :class="{ 'card-focus-dim': adjustTarget }"
+      >
         <ul class="links-list">
           <li
             v-for="(link, index) in belowLinks"
@@ -420,19 +609,18 @@ async function onLinkDrop(targetIndex) {
         @deleted="onLinkDeleted"
       />
 
-      <ImageCropModal
-        v-if="imageCropTarget"
-        :type="imageCropTarget"
-        :avatar-shape="profile.avatarShape || 'circle'"
-        @close="imageCropTarget = null"
-        @saved="onImageSaved"
+      <ImagePickModal
+        v-if="pickModalTarget"
+        :type="pickModalTarget"
+        @close="pickModalTarget = null"
+        @picked="onImagePicked"
       />
 
       <FlagPickerModal
-        v-if="flagPickerSide"
-        :side="flagPickerSide"
-        :current-key="flagPickerSide === 'left' ? profile.flagLeft : profile.flagRight"
-        @close="flagPickerSide = null"
+        v-if="flagPickerField"
+        :field="flagPickerField"
+        :current-key="profile[flagPickerField]"
+        @close="flagPickerField = null"
         @saved="onFlagSaved"
       />
 

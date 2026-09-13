@@ -5,7 +5,6 @@
 // itself, so the whole face scales together and keeps its proportions no
 // matter how big or small the card ends up on a given screen.
 .card {
-  --card-background-color: #6c5ce7;
   --card-body-color: #2e2e33;
   --card-avatar-color: #5ac85a;
 
@@ -26,29 +25,138 @@
 .card-background {
   position: relative;
   height: 45cqw;
-  background-color: var(--card-background-color);
+  // The card's own main/secondary-color gradient (same colors and
+  // direction as .card-body's, just without its transparency mix - this is
+  // the base layer, not an overlay) - shows both as the base color for a
+  // profile with no background photo yet, *and* through any transparent
+  // parts of one that has (whether that's a saved transparent PNG - see
+  // ProfileView.vue's inline style, which layers the photo on top of this
+  // same gradient - or, while live-adjusting, straight through the
+  // separate <img> element sitting on top of it).
+  background-image: linear-gradient(to bottom right, var(--card-maincolor, #6c5ce7), var(--card-secondarycolor, #6c5ce7));
+  // Clips the live-adjust <img> (see .card-adjust-image below) to this
+  // strip exactly like `background-size: cover` already does for the saved
+  // image once adjustment is confirmed.
+  overflow: hidden;
+  transition: filter 0.25s ease, opacity 0.25s ease;
 
   background-size: cover;
   background-position: center;
+
+  &--adjusting {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 }
 
+// Small hint shown while the background image is being live-adjusted -
+// pointer-events: none so it never blocks the drag it's describing.
+.card-adjust-hint {
+  position: absolute;
+  top: 3cqw;
+  left: 3cqw;
+  margin: 0;
+  font-size: 3.4cqw;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+// Position, stacking and the drop-shadow itself live here, on the
+// unmasked outer box - see .card-avatar-shape below for why the shape
+// masking has to sit on a separate inner element instead of here.
 .card-avatar {
   position: absolute;
   top: 20cqw;
   left: 50%;
   width: 40cqw;
   aspect-ratio: 1 / 1;
-  // --card-avatar-radius/--card-avatar-clip-path come from ProfileView.vue's
-  // inline style on .container (see avatarShapeStyle()), same pattern as
-  // --card-maincolor. clip-path is what makes the hexagon shape possible -
-  // border-radius alone can't produce it - and drop-shadow (rather than
-  // box-shadow) is used above so the shadow follows the clipped outline too.
-  border-radius: var(--card-avatar-radius, 50%);
-  clip-path: var(--card-avatar-clip-path, none);
-  background-size: cover;
-  background-position: center;
   transform: translateX(-50%);
   filter: drop-shadow(0 -4px 2px rgba(0, 0, 0, 0.5)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: filter 0.25s ease, opacity 0.25s ease;
+
+  &--adjusting {
+    // Above the adjust panel's own z-index: 5 (see CardImageAdjustPanel.scss)
+    // so the avatar itself stays fully visible/draggable over the part of
+    // the panel it overlaps, rather than being covered by it.
+    z-index: 6;
+  }
+}
+
+// --card-avatar-mask comes from ProfileView.vue's inline style on
+// .container (see avatarShapeMaskImage()), same pattern as
+// --card-maincolor - one SVG mask shared by every shape (circle, square,
+// rounded-square, hexagon) instead of mixing border-radius for some and
+// clip-path for others.
+//
+// This mask has to live on a *separate* element from .card-avatar's own
+// drop-shadow filter: per the CSS Filter Effects spec, an element's filter
+// is computed first and *then* clipped by its own clip-path/mask (unlike
+// overflow: hidden, which only clips content, not filter output) - so a
+// mask and a drop-shadow sharing one element get the shadow's soft, spread-
+// out blur cut straight back down to the mask's crisp edge, silently
+// killing it (this is what broke the hexagon avatar's shadow originally).
+// Putting the mask here and the filter on the unmasked parent instead means
+// the parent's drop-shadow is computed from *this* element's already-
+// masked, already-clipped-to-shape rendering - so the shadow correctly
+// follows both the chosen shape's outline *and* the actual image's own
+// transparency (a mostly-transparent profile picture only casts a shadow
+// where it actually has visible pixels, exactly like an unmasked image
+// would), rather than clipping the shadow away or faking a full-shape
+// silhouette regardless of what the image looks like.
+.card-avatar-shape {
+  position: absolute;
+  inset: 0;
+  mask-image: var(--card-avatar-mask);
+  -webkit-mask-image: var(--card-avatar-mask);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+
+  &--adjusting {
+    cursor: grab;
+    touch-action: none;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+// Applied to whatever isn't the element currently being live-adjusted (the
+// other of background/avatar, the flags, the body) so the one actually
+// being edited reads as clearly singled out. pointer-events: none keeps the
+// now-decorative edit buttons/links underneath from still being clickable.
+.card-focus-dim {
+  filter: blur(6px) brightness(0.7);
+  pointer-events: none;
+}
+
+// Same idea, but for the avatar specifically while the background is being
+// adjusted - a small circle reads better as faded than blurred.
+.card-focus-fade {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+// The live picked-image element panned/zoomed directly inside
+// .card-background or .card-avatar while adjusting (see
+// composables/useImageAdjuster.js) - position/size come from the
+// component's inline style, this just anchors the origin.
+.card-adjust-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
 }
 
 // Sits on top of the background/avatar images themselves, so it needs its
@@ -72,65 +180,57 @@
     bottom: 3cqw;
   }
 
+  // Positioned against .card (not .card-avatar, see the template comment) -
+  // right/top values match .card-avatar's own box (left: 50%, width: 40cqw,
+  // translateX(-50%) => right edge at 30cqw from .card's right; top: 20cqw,
+  // height: 40cqw => bottom edge at 60cqw from .card's top), then
+  // translateY(-100%) flips that top anchor into a bottom anchor so the
+  // button's own bottom-right corner lands exactly on the avatar's.
   &--avatar {
-    right: 0;
-    bottom: 0;
+    top: 60cqw;
+    right: 30cqw;
+    transform: translateY(-100%);
   }
 }
 
-// Optional country/community flags either side of the avatar, sitting just
-// below .card-background's own bottom edge (45cqw) – i.e. over the body,
-// not the background image. Positioned/sized in cqw like everything else on
-// the face, so they scale with the card instead of the viewport.
-.flag-slot {
+// Two flag slots per side now (inner: closer to the avatar, shown larger;
+// outer: further out, shown smaller - see .flag-slot's --big/--small below)
+// instead of one, grouped in a flex row so they can share one centering
+// rule. Sitting just below .card-background's own bottom edge (45cqw) –
+// i.e. over the body, not the background image.
+.flag-group {
   position: absolute;
   top: 47cqw;
-  width: 13cqw;
-  // Matches flag-icons' native SVG ratio so country flags aren't
-  // letterboxed inside the badge; pride-flags' CSS gradients just adapt to
-  // whatever box they're given, so this doesn't cost them anything.
-  aspect-ratio: 4 / 3;
-  border-radius: 2px;
-  overflow: visible; // .flag-slot-edit's corner badge pokes outside the box
+  display: flex;
+  // Aligns on a shared center line rather than a shared top edge - the two
+  // slots differ in height (they share an aspect-ratio, not a size), so
+  // top-aligning them would look lopsided.
+  align-items: center;
+  gap: 1.5cqw;
 
+  // Deliberately auto-width (however many of the two slots actually render
+  // something - a flag, or in edit mode an empty-slot button - determines
+  // it) and centered via transform around the exact point the single flag
+  // used to sit at, rather than a fixed group width: with only one of the
+  // two slots filled, that single flag's box is the group's *entire*
+  // content, so this same centering rule places it exactly where the old
+  // single flag used to be instead of looking off to one side.
   &--left {
-    left: 8cqw;
+    left: 14.5cqw;
+    transform: translateX(-50%);
   }
 
   &--right {
-    right: 8cqw;
+    right: 14.5cqw;
+    transform: translateX(50%);
   }
 }
 
-.flag-slot-empty {
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 1px dashed rgba(255, 255, 255, 0.4);
-  border-radius: 2px;
-  background: transparent;
-  color: inherit;
-  font-size: 14px;
-  line-height: 1;
-  opacity: 0.7;
-  cursor: pointer;
-}
-
-.flag-slot-edit {
-  position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 16px;
-  aspect-ratio: 1;
-  padding: 0;
-  border: 2px solid var(--card-body-color);
-  border-radius: 50%;
-  background: #000;
-  color: inherit;
-  font-size: 8px;
-  line-height: 1;
-  cursor: pointer;
-}
+// .flag-slot itself (and .flag-slot-empty/.flag-slot-edit) now live in
+// FlagSlot.vue/FlagSlot.scss - a Vue SFC's scoped styles only carry over to
+// a child component's *root* element, not elements further down its
+// template, so those rules have to travel with the component that actually
+// renders them rather than staying here.
 
 .card-body {
   height: calc(100cqh - 45cqw);
@@ -140,6 +240,7 @@
   padding: 20cqw 7cqw 5cqw;
   text-align: center;
   overflow: hidden;
+  transition: filter 0.25s ease;
 
   background-image: linear-gradient(
     to bottom right,
