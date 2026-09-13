@@ -1,3 +1,5 @@
+@use '../media.scss' as *;
+
 .landing {
   position: relative;
   display: flex;
@@ -58,6 +60,14 @@
   gap: 1.5rem;
   padding-top: 3rem;
   padding-bottom: 3rem;
+
+  @include media(max-desktop) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include media(max-medium) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .feature {

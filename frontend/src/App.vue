@@ -39,19 +39,19 @@ async function logout() {
     <nav>
       <!-- Always visible, logged in or not – unlike the rest of the nav, which
            branches on isAuthenticated() below. -->
-      <RouterLink to="/premium" class="icon-link" :aria-label="t('nav.premium')" :title="t('nav.premium')">
+      <RouterLink to="/premium" class="icon-link icon-link--premium" :aria-label="t('nav.premium')" :title="t('nav.premium')">
         <img :src="premiumIcon" alt="" />
       </RouterLink>
       <template v-if="isAuthenticated()">
-        <RouterLink to="/app" class="icon-link" :aria-label="t('nav.myProfile')" :title="t('nav.myProfile')">
+        <RouterLink to="/app" class="icon-link icon-link--profile" :aria-label="t('nav.myProfile')" :title="t('nav.myProfile')">
           <img :src="profileIcon" alt="" />
         </RouterLink>
-        <RouterLink to="/settings" class="icon-link" :aria-label="t('nav.settings')" :title="t('nav.settings')">
+        <RouterLink to="/settings" class="icon-link icon-link--settings" :aria-label="t('nav.settings')" :title="t('nav.settings')">
           <img :src="settingsIcon" alt="" />
         </RouterLink>
         <button
           type="button"
-          class="icon-link"
+          class="icon-link icon-link--language"
           :aria-label="t('nav.language')"
           :title="t('nav.language')"
           @click="showLanguageModal = true"
@@ -60,7 +60,7 @@ async function logout() {
         </button>
         <button
           type="button"
-          class="icon-link"
+          class="icon-link icon-link--logout"
           :aria-label="t('nav.logout')"
           :title="t('nav.logout')"
           @click="logout"
@@ -69,15 +69,12 @@ async function logout() {
         </button>
       </template>
       <template v-else>
-        <RouterLink to="/register" class="icon-link" :aria-label="t('nav.register')" :title="t('nav.register')">
-          <img :src="signupIcon" alt="" />
-        </RouterLink>
-        <RouterLink to="/login" class="icon-link" :aria-label="t('nav.login')" :title="t('nav.login')">
+        <RouterLink to="/login" class="icon-link icon-link--login" :aria-label="t('nav.login')" :title="t('nav.login')">
           <img :src="loginIcon" alt="" />
         </RouterLink>
         <button
           type="button"
-          class="icon-link"
+          class="icon-link icon-link--language"
           :aria-label="t('nav.language')"
           :title="t('nav.language')"
           @click="showLanguageModal = true"

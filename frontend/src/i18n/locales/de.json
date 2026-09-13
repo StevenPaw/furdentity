@@ -22,6 +22,7 @@
     "heroTitle": "Eine Identität für jede furry Ecke des Internets",
     "heroSubtitle": "Furdentity verbindet die Seiten, Social-Media-Profile und Communities deiner Fursona zu einem einzigen, teilbaren Profil.",
     "cta": "Profil erstellen",
+    "ctaLoggedIn": "Mein Profil anzeigen",
     "carouselTitle": "Kürzlich dazugekommen",
     "ctaBandTitle": "Bereit, deine Identität zu bündeln?",
     "features": [
@@ -157,7 +158,7 @@
   },
   "about": {
     "heading": "About us",
-    "text": "Furdentity wird von Steffen Kahl entwickelt, einem Entwickler, der die vielen Ecken des Furry-Fandoms zu einer Identität verbindet. [Platzhaltertext – durch eine echte Kurzbiografie ersetzen.]"
+    "text": "Furdentity wird von Steffen Kahl entwickelt. Er kommt aus Norddeutschland nahe Hamburg, ist seit 2005 im Furry-Fandom aktiv und arbeitet hauptberuflich als Webentwickler. Dieses Projekt ist sein Hobby und wird in seiner Freizeit entwickelt."
   },
   "notFound": {
     "heading": "Seite nicht gefunden",

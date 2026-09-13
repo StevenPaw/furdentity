@@ -1,3 +1,5 @@
+@use 'media.scss' as *;
+
 // Fixed dark background regardless of light/dark theme, since the brand
 // mark and nav icons are baked as light-on-transparent assets (white logo,
 // #e3e3e3-fill icons) and need a dark surface to read against either theme.
@@ -22,12 +24,18 @@
 }
 
 .brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  font-size: 1.1rem;
-  text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-decoration: none;
+
+    @include media(max-smartphone) {
+        span {
+            display: none;
+        }
+    }
 }
 
 .brand-logo {

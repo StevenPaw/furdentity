@@ -17,8 +17,18 @@ const router = createRouter({
   history: createWebHistory('/'),
   routes: [
     { path: '/', name: 'landing', component: LandingPage, meta: { public: true } },
-    { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
-    { path: '/register', name: 'register', component: RegisterView, meta: { public: true } },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { public: true, guestOnly: true },
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: RegisterView,
+      meta: { public: true, guestOnly: true },
+    },
     {
       path: '/login/confirm',
       name: 'login-confirm',
@@ -68,7 +78,18 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
+  if (to.meta.guestOnly && isAuthenticated()) {
+    try {
+      const me = await api.me()
+      return { name: 'profile', params: { handle: me.handle } }
+    } catch {
+      // Auth-flag cookie says logged in but the session is actually dead –
+      // let the guest page through rather than blocking navigation.
+      return
+    }
+  }
+
   if (to.meta.public) return
 
   if (!isAuthenticated()) {

@@ -60,12 +60,26 @@ class AuthController extends ApiController
             $this->error('A valid email address is required', 422);
         }
 
-        // Handle/title are only meaningful for a brand-new account (see
-        // confirm() – an existing user's handle is never changed here), but
-        // we validate them up front so the registration form gets an
-        // immediate, useful error instead of a silently-ignored value.
+        // Always respond the same way whether or not the address is known,
+        // and create the user on first login, so this can't be used to probe
+        // which emails are registered.
+        $user = User::get()->filter('Email', $email)->first();
+        $isNewAccount = !$user instanceof User;
+
+        // Title/handle are only meaningful for a brand-new account (see
+        // confirm() – an existing user's handle is never changed here). For
+        // a new account both are mandatory, otherwise the user ends up with
+        // a broken profile that has no display name or public URL.
+        if ($isNewAccount && $title === '') {
+            $this->error('Display name is required', 422);
+        }
+
         if ($title !== '' && mb_strlen($title) > User::TITLE_MAX_LENGTH) {
             $this->error('title must be ' . User::TITLE_MAX_LENGTH . ' characters or fewer', 422);
+        }
+
+        if ($isNewAccount && $handle === '') {
+            $this->error('Handle is required', 422);
         }
 
         if ($handle !== '') {
@@ -81,12 +95,7 @@ class AuthController extends ApiController
             }
         }
 
-        // Always respond the same way whether or not the address is known,
-        // and create the user on first login, so this can't be used to probe
-        // which emails are registered.
-        $user = User::get()->filter('Email', $email)->first();
-
-        if (!$user instanceof User) {
+        if ($isNewAccount) {
             $user = User::create();
             $user->Email = $email;
             $user->write();
