@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.25rem;
+  padding: 10px 20px;
   background: #1f1f23;
   color: #fff;
 
@@ -77,6 +77,16 @@ main {
 .site-footer {
   border-top: 1px solid #8884;
   margin-top: 2rem;
+
+  // See state/pageBackdrop.js - set whenever the current route (the
+  // profile page) has its own fixed, full-viewport dark backdrop, which
+  // sits behind the footer regardless of scroll position and regardless of
+  // the visitor's light/dark OS preference. Without this, the footer links
+  // (color: inherit, same as every other link - see main.scss) fell back
+  // to the ordinary page text color, unreadably dark-on-dark in light mode.
+  &--on-backdrop {
+    color: #fff;
+  }
 }
 
 .footer-inner {

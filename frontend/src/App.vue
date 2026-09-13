@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { api, isAuthenticated } from './api/client'
+import { hasPageBackdrop } from './state/pageBackdrop'
 import { useI18n } from 'vue-i18n'
 import logoWhite from './assets/Furdentity-Logo-White.svg'
 import profileIcon from './assets/icons/profile.svg'
@@ -89,7 +90,7 @@ async function logout() {
     <RouterView />
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" :class="{ 'site-footer--on-backdrop': hasPageBackdrop }">
     <div class="container footer-inner">
       <div class="footer-group">
         <span class="footer-heading">{{ t('footer.legal') }}</span>

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { api, isAuthenticated } from '../api/client'
+import { hasPageBackdrop } from '../state/pageBackdrop'
 import { getPlatform } from '../utils/socialPlatforms'
 import ProfileFieldEditModal from '../components/ProfileFieldEditModal.vue'
 import LinkEditModal from '../components/LinkEditModal.vue'
@@ -153,6 +154,18 @@ watchEffect(async () => {
       notFound.value = true
     }
   }
+})
+
+// Global chrome outside this component (App.vue's header/footer) needs to
+// know about .page-backdrop too - see state/pageBackdrop.js. Reset on
+// unmount rather than left to the watchEffect above alone, so navigating
+// away to a route that renders no backdrop of its own doesn't leave it
+// permanently stuck on from whatever this profile last had.
+watchEffect(() => {
+  hasPageBackdrop.value = !!profile.value?.backgroundUrl
+})
+onUnmounted(() => {
+  hasPageBackdrop.value = false
 })
 
 function onFieldSaved(updated) {

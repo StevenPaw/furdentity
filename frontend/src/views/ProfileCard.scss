@@ -175,21 +175,26 @@
   line-height: 1;
   cursor: pointer;
 
+  // Horizontally centered on .card-background, but kept in its upper
+  // portion (rather than dead-center, like every other edit button here)
+  // since the avatar dips down into the background strip's lower half
+  // (see .card-avatar - it starts at .card's top: 20cqw, well above this
+  // 45cqw-tall strip's own bottom edge) and would otherwise collide with a
+  // truly centered button.
   &--background {
-    right: 3cqw;
-    bottom: 3cqw;
+    top: 13cqw;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
-  // Positioned against .card (not .card-avatar, see the template comment) -
-  // right/top values match .card-avatar's own box (left: 50%, width: 40cqw,
-  // translateX(-50%) => right edge at 30cqw from .card's right; top: 20cqw,
-  // height: 40cqw => bottom edge at 60cqw from .card's top), then
-  // translateY(-100%) flips that top anchor into a bottom anchor so the
-  // button's own bottom-right corner lands exactly on the avatar's.
+  // Centered on .card-avatar's own box (left: 50%, width: 40cqw - so
+  // horizontal center is .card's own 50%; top: 20cqw, height: 40cqw - so
+  // vertical center is 40cqw) - positioned against .card rather than
+  // .card-avatar itself, see the template comment.
   &--avatar {
-    top: 60cqw;
-    right: 30cqw;
-    transform: translateY(-100%);
+    top: 40cqw;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 }
 
@@ -311,7 +316,9 @@
 
 .card-field-edit-btn {
   flex: none;
-  width: 22px;
+  // Matches .card-image-edit-btn (the avatar/background edit pencil) - every
+  // edit button on the card face is meant to read as the same control.
+  width: 28px;
   aspect-ratio: 1;
   padding: 0;
   border: none;
@@ -378,16 +385,20 @@
 
 .card-link-slot-edit {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 16px;
+  // Matches .card-image-edit-btn's size - every edit button on the card
+  // face is meant to read as the same control. Centered on .card-link-slot
+  // (which shrinks to the icon's own size) rather than pinned to a corner.
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
   aspect-ratio: 1;
   padding: 0;
   border: 2px solid var(--card-body-color);
   border-radius: 50%;
   background: #000;
   color: inherit;
-  font-size: 8px;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }

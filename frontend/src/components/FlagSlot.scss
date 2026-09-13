@@ -9,7 +9,10 @@
   // cover equivalent) rather than relying on matching this ratio exactly.
   aspect-ratio: 4 / 3;
   border-radius: 2px;
-  overflow: visible; // .flag-slot-edit's corner badge pokes outside the box
+  // .flag-slot-edit is centered on this box now, but on the smaller of the
+  // two flag sizes (see --small below) it's barely narrower than the flag
+  // itself - visible just in case it ever pokes past the edge.
+  overflow: visible;
   transition: filter 0.25s ease, width 0.25s ease;
 
   // The inner slot is always shown at the "full" size, whether it's paired
@@ -43,16 +46,21 @@
 
 .flag-slot-edit {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 16px;
+  // Matches .card-image-edit-btn's size (ProfileCard.scss - the avatar/
+  // background edit pencil) - every edit button on the card face is meant
+  // to read as the same control. Centered on the flag itself rather than
+  // pinned to a corner.
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
   aspect-ratio: 1;
   padding: 0;
   border: 2px solid var(--card-body-color);
   border-radius: 50%;
   background: #000;
   color: inherit;
-  font-size: 8px;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }

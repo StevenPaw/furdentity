@@ -73,6 +73,13 @@
   border-radius: 50%;
   border: 1px solid currentColor;
   background: transparent;
+  // Buttons don't inherit `color` from their ancestors by default (the UA
+  // stylesheet gives them their own default text color) - .edit-toggle
+  // already accounts for this, but this button's border (currentColor)
+  // was left relying on the *inherited* white .container--has-backdrop
+  // sets, so it silently fell back to the browser's default (black in
+  // light mode) instead, same low-contrast problem as .edit-toggle had.
+  color: inherit;
   cursor: pointer;
 
   img {
